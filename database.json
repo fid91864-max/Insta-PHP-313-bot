@@ -1,0 +1,17 @@
+{
+  "users": {},
+  "settings": {
+    "welcome_video": "https://files.catbox.moe/v30pbc.mp4",
+    "extraction_open": false,
+    "maintenance_mode": false,
+    "maintenance_msg": "We are upgrading our systems. Please try again later."
+  },
+  "admin_state": null,
+  "admin_temp": [],
+  "stats": {
+    "total_extractions": 0,
+    "total_media_sent": 0,
+    "total_broadcasts": 0,
+    "started_at": 1789767880
+  }
+}
