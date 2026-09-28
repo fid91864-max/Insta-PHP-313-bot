@@ -45,32 +45,52 @@ if ($fileId) {
         $imageContent = @file_get_contents($downloadUrl);
 
         if ($imageContent !== false) {
-            $ext = pathinfo($filePath, PATHINFO_EXTENSION) ?: 'jpg';
-            $tmpFile = tempnam(sys_get_temp_dir(), 'cb_') . '.' . $ext;
-            file_put_contents($tmpFile, $imageContent);
-
-            $cfile = new CURLFile($tmpFile, 'image/' . $ext, 'upload.' . $ext);
-
-            $postData = [
-                'reqtype' => 'fileupload',
-                'fileToUpload' => $cfile
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION) ?: 'jpg');
+            $filename = "img_" . time() . "_" . bin2hex(random_bytes(3)) . ".{$ext}";
+            
+            // Standard MIME mapping
+            $mimes = [
+                'jpg'  => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png'  => 'image/png',
+                'webp' => 'image/webp',
+                'gif'  => 'image/gif'
             ];
+            $contentType = $mimes[$ext] ?? 'image/jpeg';
+
+            // Catbox standard multipart boundary structure
+            $boundary = '---------------------------' . microtime(true);
+            $eol = "\r\n";
+
+            $body  = "--" . $boundary . $eol;
+            $body .= 'Content-Disposition: form-data; name="reqtype"' . $eol . $eol;
+            $body .= 'fileupload' . $eol;
+
+            $body .= "--" . $boundary . $eol;
+            $body .= 'Content-Disposition: form-data; name="userhash"' . $eol . $eol;
+            $body .= '' . $eol;
+
+            $body .= "--" . $boundary . $eol;
+            $body .= 'Content-Disposition: form-data; name="fileToUpload"; filename="' . $filename . '"' . $eol;
+            $body .= 'Content-Type: ' . $contentType . $eol . $eol;
+            $body .= $imageContent . $eol;
+            $body .= "--" . $boundary . "--" . $eol;
 
             $ch = curl_init("https://catbox.moe/user/api.php");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-            curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "Content-Type: multipart/form-data; boundary=" . $boundary,
+                "Content-Length: " . strlen($body)
+            ]);
+            curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36");
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 
             $catboxUrl = trim(curl_exec($ch));
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-            if (file_exists($tmpFile)) {
-                unlink($tmpFile);
-            }
 
             if ($httpCode === 200 && str_starts_with($catboxUrl, 'http')) {
                 $responseMsg = "🚀 <b>Image Uploaded!</b>\n\n🔗 <b>Direct Link:</b>\n<code>{$catboxUrl}</code>";
