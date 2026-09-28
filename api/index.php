@@ -6,7 +6,7 @@ $update = json_decode(file_get_contents('php://input'), true);
 
 if (!$update) {
     http_response_code(200);
-    echo "Bot is running perfectly!";
+    echo "Bot is active";
     exit;
 }
 
@@ -19,27 +19,22 @@ $chatId = $message['chat']['id'];
 $messageId = $message['message_id'];
 $text = trim($message['text'] ?? '');
 
-// শুধু /start কমান্ড হ্যান্ডেল করা
 if ($text === '/start') {
-    $welcomeText = "👋 <b>স্বাগতম!</b>\n\nআমাকে এক বা একাধিক যেকোনো ছবি পাঠান। কোনো কমান্ডের প্রয়োজন নেই, প্রতিটা ছবির জন্য সরাসরি Catbox লিংক তৈরি হয়ে যাবে।";
+    $welcomeText = "👋 <b>স্বাগতম!</b>\n\nAmake chobi pathan, ami Catbox direct link toiri kore dibo.";
     sendMessage($botToken, $chatId, $welcomeText, 'HTML', $messageId);
     exit;
 }
 
-// ছবি চেক করা (Regular Photo অথবা Document হিসেবে আসা Image)
 $fileId = null;
 
 if (!empty($message['photo'])) {
-    // অ্যালবাম বা সিঙ্গেল ফটোর ক্ষেত্রে সর্বোচ্চ রেজোলিউশনের ফটো নেওয়া
     $photo = end($message['photo']);
     $fileId = $photo['file_id'];
 } elseif (!empty($message['document']) && str_starts_with($message['document']['mime_type'] ?? '', 'image/')) {
-    // কেউ আনকমপ্রেসড ফাইল/ডকুমেন্ট হিসেবে ছবি পাঠালে
     $fileId = $message['document']['file_id'];
 }
 
 if ($fileId) {
-    // টেলিগ্রাম থেকে ছবির পাথ বের করা
     $fileInfoUrl = "https://api.telegram.org/bot{$botToken}/getFile?file_id={$fileId}";
     $fileInfo = json_decode(file_get_contents($fileInfoUrl), true);
 
@@ -47,40 +42,37 @@ if ($fileId) {
         $filePath = $fileInfo['result']['file_path'];
         $downloadUrl = "https://api.telegram.org/file/bot{$botToken}/{$filePath}";
 
-        // ছবি ডাউনলোড করা
         $imageContent = file_get_contents($downloadUrl);
 
         if ($imageContent !== false) {
-            // Catbox.moe API-তে পাঠানো
-            $boundary = "----WebKitFormBoundary" . md5(microtime());
             $ext = pathinfo($filePath, PATHINFO_EXTENSION) ?: 'jpg';
-            $filename = "img_" . time() . "_" . bin2hex(random_bytes(4)) . ".{$ext}";
+            $tempFile = tempnam(sys_get_temp_dir(), 'catbox_') . ".{$ext}";
+            file_put_contents($tempFile, $imageContent);
 
-            $payload  = "--{$boundary}\r\n";
-            $payload .= "Content-Disposition: form-data; name=\"reqtype\"\r\n\r\n";
-            $payload .= "fileupload\r\n";
-            $payload .= "--{$boundary}\r\n";
-            $payload .= "Content-Disposition: form-data; name=\"fileToUpload\"; filename=\"{$filename}\"\r\n";
-            $payload .= "Content-Type: image/{$ext}\r\n\r\n";
-            $payload .= $imageContent . "\r\n";
-            $payload .= "--{$boundary}--\r\n";
+            $cfile = new CURLFile($tempFile, 'image/' . $ext, basename($tempFile));
+
+            $postData = [
+                'reqtype' => 'fileupload',
+                'fileToUpload' => $cfile
+            ];
 
             $ch = curl_init("https://catbox.moe/user/api.php");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                "Content-Type: multipart/form-data; boundary={$boundary}",
-                "Content-Length: " . strlen($payload)
-            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
             $catboxUrl = trim(curl_exec($ch));
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+
             if ($httpCode === 200 && str_starts_with($catboxUrl, 'http')) {
                 $responseMsg = "🚀 <b>Image Uploaded!</b>\n\n🔗 <b>Direct Link:</b>\n<code>{$catboxUrl}</code>";
-                
                 $inlineKeyboard = [
                     'inline_keyboard' => [
                         [
@@ -88,17 +80,15 @@ if ($fileId) {
                         ]
                     ]
                 ];
-
                 sendMessage($botToken, $chatId, $responseMsg, 'HTML', $messageId, $inlineKeyboard);
             } else {
-                sendMessage($botToken, $chatId, "⚠️ আপলোড ব্যর্থ হয়েছে। আবার চেষ্টা করুন।", '', $messageId);
+                sendMessage($botToken, $chatId, "⚠️ Upload failed! Response: " . substr($catboxUrl, 0, 50), '', $messageId);
             }
         }
     }
     exit;
 }
 
-// Telegram API Helper ফাংশন
 function sendMessage($token, $chatId, $text, $parseMode = '', $replyTo = null, $replyMarkup = null) {
     $url = "https://api.telegram.org/bot{$token}/sendMessage";
     $postData = [
