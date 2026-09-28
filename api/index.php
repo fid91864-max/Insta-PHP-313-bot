@@ -1,12 +1,12 @@
 <?php
 
-$botToken = getenv('BOT_TOKEN') ?: '8909542012:AAE2CAnw-v-ee8-9d7znU96GjcCyOIi2CNE';
+$botToken = getenv('BOT_TOKEN') ?: '8909542012:AAHbPf-imp89fqwR-NMzAlTQS25W4WMTiiQ';
 
 $update = json_decode(file_get_contents('php://input'), true);
 
 if (!$update) {
     http_response_code(200);
-    echo "Bot is active";
+    echo "Bot is active!";
     exit;
 }
 
@@ -20,7 +20,7 @@ $messageId = $message['message_id'];
 $text = trim($message['text'] ?? '');
 
 if ($text === '/start') {
-    $welcomeText = "👋 <b>স্বাগতম!</b>\n\nAmake chobi pathan, ami Catbox direct link toiri kore dibo.";
+    $welcomeText = "👋 <b>স্বাগতম!</b>\n\nআমাকে এক বা একাধিক ছবি পাঠান। কোনো কমান্ড ছাড়াই প্রতিটা ছবির জন্য সরাসরি Catbox লিংক তৈরি হয়ে যাবে।";
     sendMessage($botToken, $chatId, $welcomeText, 'HTML', $messageId);
     exit;
 }
@@ -36,20 +36,20 @@ if (!empty($message['photo'])) {
 
 if ($fileId) {
     $fileInfoUrl = "https://api.telegram.org/bot{$botToken}/getFile?file_id={$fileId}";
-    $fileInfo = json_decode(file_get_contents($fileInfoUrl), true);
+    $fileInfo = json_decode(@file_get_contents($fileInfoUrl), true);
 
     if (!empty($fileInfo['result']['file_path'])) {
         $filePath = $fileInfo['result']['file_path'];
         $downloadUrl = "https://api.telegram.org/file/bot{$botToken}/{$filePath}";
 
-        $imageContent = file_get_contents($downloadUrl);
+        $imageContent = @file_get_contents($downloadUrl);
 
         if ($imageContent !== false) {
             $ext = pathinfo($filePath, PATHINFO_EXTENSION) ?: 'jpg';
-            $tempFile = tempnam(sys_get_temp_dir(), 'catbox_') . ".{$ext}";
-            file_put_contents($tempFile, $imageContent);
+            $tmpFile = tempnam(sys_get_temp_dir(), 'cb_') . '.' . $ext;
+            file_put_contents($tmpFile, $imageContent);
 
-            $cfile = new CURLFile($tempFile, 'image/' . $ext, basename($tempFile));
+            $cfile = new CURLFile($tmpFile, 'image/' . $ext, 'upload.' . $ext);
 
             $postData = [
                 'reqtype' => 'fileupload',
@@ -60,15 +60,16 @@ if ($fileId) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 
             $catboxUrl = trim(curl_exec($ch));
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
 
-            if (file_exists($tempFile)) {
-                unlink($tempFile);
+            if (file_exists($tmpFile)) {
+                unlink($tmpFile);
             }
 
             if ($httpCode === 200 && str_starts_with($catboxUrl, 'http')) {
@@ -82,7 +83,7 @@ if ($fileId) {
                 ];
                 sendMessage($botToken, $chatId, $responseMsg, 'HTML', $messageId, $inlineKeyboard);
             } else {
-                sendMessage($botToken, $chatId, "⚠️ Upload failed! Response: " . substr($catboxUrl, 0, 50), '', $messageId);
+                sendMessage($botToken, $chatId, "⚠️ Upload failed! " . $catboxUrl, '', $messageId);
             }
         }
     }
@@ -110,6 +111,6 @@ function sendMessage($token, $chatId, $text, $parseMode = '', $replyTo = null, $
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_exec($ch);
-    curl_close($ch);
 }
