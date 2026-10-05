@@ -1,5 +1,6 @@
 import json
 import re
+import urllib.parse
 from flask import Flask, Response, request
 import requests
 
@@ -9,7 +10,6 @@ BOT_TOKEN = "8785527680:AAFWQkMChNXlpfQVdFc4LkeMvLSybI6DhGE"
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 SCAM_API_BASE = "https://truecaller-scam-api-fid91864-maxs-projects.vercel.app/"
 
-# কাস্টম বাটন লেআউট
 BOT_KEYBOARD = {
     "inline_keyboard": [
         [{"text": "🔵 Search New", "callback_data": "/action"}],
@@ -81,7 +81,7 @@ def telegram_webhook():
   if not update:
     return Response(status=200)
 
-  # ১. Callback Query (বাটনে চাপলে)
+  # ১. Callback Query
   if "callback_query" in update:
     cb = update["callback_query"]
     chat_id = cb["message"]["chat"]["id"]
@@ -149,7 +149,22 @@ def telegram_webhook():
   send_message(chat_id, f"🔍 <i>Checking {phone}...</i>")
 
   try:
-    res = requests.get(f"{SCAM_API_BASE}?phone={phone}", timeout=15)
+    # URL encode করা যাতে '+' চিহ্ন টিকে থাকে (%2B)
+    encoded_phone = urllib.parse.quote(phone)
+    target_api_url = f"{SCAM_API_BASE}?phone={encoded_phone}"
+
+    # API কল
+    res = requests.get(target_api_url, timeout=25)
+
+    if res.status_code != 200:
+      send_message(
+          chat_id,
+          f"❌ <b>API Error ({res.status_code}):</b> Failed to fetch data."
+          " Please try again.",
+          BOT_KEYBOARD,
+      )
+      return Response(status=200)
+
     res_data = res.json()
 
     if res_data.get("status") == "success":
@@ -159,11 +174,15 @@ def telegram_webhook():
       err_msg = res_data.get("message", "Could not fetch details.")
       send_message(chat_id, f"❌ <b>Error:</b> {err_msg}", BOT_KEYBOARD)
 
-  except Exception:
+  except requests.exceptions.Timeout:
     send_message(
         chat_id,
-        "⚠️️ Failed to connect to Scam Checker API. Please try again.",
+        "⏱ <b>Timeout:</b> Truecaller took too long to respond. Try again.",
         BOT_KEYBOARD,
+    )
+  except Exception as e:
+    send_message(
+        chat_id, f"⚠️ <b>Error:</b> {str(e)[:100]}", BOT_KEYBOARD
     )
 
   return Response(status=200)
