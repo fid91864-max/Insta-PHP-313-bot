@@ -1,241 +1,212 @@
-import io
-import os
-import random
+from flask import Flask, request, Response
 import requests
-from flask import Flask, request, jsonify
-from PIL import Image
+import json
+import re
+import os
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
 
-# --- CONFIGURATION ---
-BOT_TOKEN = "8712159172:AAF-UYoi9t1Gzf0rfwJ4um6mxFEcMGydhbI"
-TG_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
-NASA_BASE_URL = "https://science.nasa.gov/specials/your-name-in-landsat/images"
+PROFILE_API_URL = "https://inflact.com/downloader/api/downloader/profile/?lang=en"
 
-# আপনার ওয়েলকাম ভিডিও লিঙ্ক
-WELCOME_VIDEO = "https://files.catbox.moe/ybapbh.mp4"
+# Vercel ও লোকাল উভয় জায়গায় রুট ডিরেক্টরি থেকে ফাইলের পাথ নেওয়া
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+JSON_FILE_PATH = os.path.join(CURRENT_DIR, "..", "bd_users.json")
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.8037.57 Mobile Safari/537.36"
+    "host": "inflact.com",
+    "sec-ch-ua-platform": "\"Android\"",
+    "user-agent": "Mozilla/5.0 (Linux; Android 14; 2409BRN2CY Build/UP1A.231005.007) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.8037.57 Mobile Safari/537.36",
+    "sec-ch-ua": "\"Chromium\";v=\"154\", \"Android WebView\";v=\"154\", \"Not A(Brand\";v=\"99\"",
+    "sec-ch-ua-mobile": "?1",
+    "x-client-signature": "a742dba2f85e7d04f713b1331346789a84bf49adcfdeead7f834fbe60f10a7eb",
+    "x-client-token": "eyJ0aW1lc3RhbXAiOjE3OTE2MzY2MDQsImNsaWVudElkIjoiMjcwMGY2MGI5MjZmNWRiOWJlNmM0MDYwM2YyNzI0YzkiLCJub25jZSI6ImE2YTFiMzg0ZTNmNDM0YjI0YTA4MDE5ZWY0OGNhMTJhIn0=",
+    "accept": "*/*",
+    "origin": "https://inflact.com",
+    "x-requested-with": "mark.via.gp",
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-dest": "empty",
+    "referer": "https://inflact.com/instagram-downloader/pfp/",
+    "accept-language": "en-US,en;q=0.9"
 }
 
-# --- NASA IMAGE GENERATOR ENGINE ---
-def fetch_letter_image(letter, chosen_style=None):
-    all_variants = [1, 2, 3, 4, 5]
-    if chosen_style and chosen_style in all_variants:
-        priority_list = [chosen_style] + [v for v in all_variants if v != chosen_style]
-    else:
-        priority_list = all_variants.copy()
-        random.shuffle(priority_list)
+COOKIES = {
+    "ingramer_sid": "03nag8dqmevkdehq75eg463am4",
+    "_csrf": "bb1367e263b9e3a923b50a92c92949ae9f28a27d5d454ad30a85bff48b8f00dfa",
+    "user_timezone": "3edf99fc1da9e15ef8378b44f8b7a901504b5ecf8f42919f55b10393f0b03367a%3A2%3A%7Bi%3A0%3Bs%3A13%3A%22user_timezone%22%3Bi%3A1%3Bs%3A10%3A%22Asia%2FDhaka%22%3B%7D",
+    "from_landing": "21fb3640e438032a01ae19d86f8ad23ba384c0692f22312e7538cf7ab5874468a%3A2%3A%7Bi%3A0%3Bs%3A12%3A%22from_landing%22%3Bi%3A1%3Bs%3A10%3A%22downloader%22%3B%7D"
+}
 
-    for v in priority_list:
-        img_url = f"{NASA_BASE_URL}/{letter}_{v}.jpg"
-        try:
-            res = requests.get(img_url, headers=HEADERS, timeout=8)
-            if res.status_code == 200 and len(res.content) > 1000:
-                return Image.open(io.BytesIO(res.content)).convert("RGB")
-        except Exception:
-            continue
-    return None
+DB_BY_USERNAME = {}
+DB_BY_PHONE = {}
 
-def generate_landsat_image(name, style_val=None):
-    raw_images = []
-    for char in name:
-        if char.isalpha():
-            img = fetch_letter_image(char.lower(), chosen_style=style_val)
-            if img:
-                raw_images.append({"type": "char", "image": img})
-        elif char.isspace():
-            raw_images.append({"type": "space"})
+def normalize_phone(phone_input):
+    digits = re.sub(r'\D', '', str(phone_input))
+    if digits.startswith('880'):
+        return digits
+    elif digits.startswith('0'):
+        return '88' + digits
+    elif len(digits) == 10 and digits.startswith('1'):
+        return '880' + digits
+    return digits
 
-    if not raw_images:
-        return None
+def load_local_db():
+    global DB_BY_USERNAME, DB_BY_PHONE
+    if not os.path.exists(JSON_FILE_PATH):
+        return
 
-    char_images = [item["image"] for item in raw_images if item["type"] == "char"]
-    if not char_images:
-        return None
+    try:
+        with open(JSON_FILE_PATH, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    record = json.loads(line)
+                    user = record.get('u', '').strip().lower()
+                    phone = record.get('t', '').strip()
 
-    target_height = min(img.height for img in char_images)
-    processed_images = []
-    gap = 12
+                    cleaned = {
+                        "username": record.get("u"),
+                        "phone": phone,
+                        "email": record.get("e"),
+                        "name": record.get("n"),
+                        "address": record.get("a"),
+                        "id": record.get("id")
+                    }
 
-    for item in raw_images:
-        if item["type"] == "char":
-            img = item["image"]
-            aspect_ratio = img.width / img.height
-            new_width = int(target_height * aspect_ratio)
-            resized = img.resize((new_width, target_height), Image.Resampling.LANCZOS)
-            processed_images.append(resized)
-        elif item["type"] == "space":
-            space_width = int(target_height * 0.45)
-            space_img = Image.new("RGB", (space_width, target_height), color=(15, 15, 15))
-            processed_images.append(space_img)
+                    if user:
+                        DB_BY_USERNAME[user] = cleaned
+                    if phone:
+                        DB_BY_PHONE[normalize_phone(phone)] = cleaned
+                except Exception:
+                    continue
+    except Exception as e:
+        print(f"Database error: {e}")
 
-    total_width = sum(img.width for img in processed_images) + (len(processed_images) - 1) * gap
-    final_canvas = Image.new("RGB", (total_width, target_height), color=(10, 10, 10))
+load_local_db()
 
-    current_x = 0
-    for img in processed_images:
-        final_canvas.paste(img, (current_x, 0))
-        current_x += img.width + gap
+def clean_json_response(data_dict, status_code=200):
+    return Response(
+        json.dumps(data_dict, ensure_ascii=False, indent=2),
+        status=status_code,
+        mimetype="application/json; charset=utf-8"
+    )
 
-    output = io.BytesIO()
-    final_canvas.save(output, format='JPEG', quality=95)
-    output.seek(0)
-    return output
-
-# --- TELEGRAM API HELPERS ---
-def send_video(chat_id, video_url, caption, reply_markup=None):
-    payload = {
-        "chat_id": chat_id,
-        "video": video_url,
-        "caption": caption,
-        "parse_mode": "HTML"
-    }
-    if reply_markup:
-        payload["reply_markup"] = reply_markup
-    requests.post(f"{TG_API_URL}/sendVideo", json=payload, timeout=15)
-
-def send_message(chat_id, text, reply_markup=None):
-    payload = {
-        "chat_id": chat_id,
-        "text": text,
-        "parse_mode": "HTML"
-    }
-    if reply_markup:
-        payload["reply_markup"] = reply_markup
-    requests.post(f"{TG_API_URL}/sendMessage", json=payload, timeout=10)
-
-def send_photo(chat_id, photo_bytes, caption, reply_markup=None):
-    files = {"photo": ("landsat.jpg", photo_bytes, "image/jpeg")}
-    data = {
-        "chat_id": chat_id,
-        "caption": caption,
-        "parse_mode": "HTML"
-    }
-    if reply_markup:
-        data["reply_markup"] = reply_markup
-    requests.post(f"{TG_API_URL}/sendPhoto", data=data, files=files, timeout=30)
-
-def answer_callback(callback_query_id, text=None):
-    payload = {"callback_query_id": callback_query_id}
-    if text:
-        payload["text"] = text
-    requests.post(f"{TG_API_URL}/answerCallbackQuery", json=payload, timeout=10)
-
-# --- WEBHOOK ROUTE ---
-@app.route('/', methods=['GET', 'POST'])
-def webhook():
-    if request.method == 'GET':
-        return jsonify({"status": "Bot is active and running!"})
-
-    data = request.get_json(force=True, silent=True)
-    if not data:
-        return "OK"
-
-    # ১. বাটন ক্লিক হ্যান্ডেল (Callback Queries)
-    if "callback_query" in data:
-        cb = data["callback_query"]
-        cb_id = cb["id"]
-        chat_id = cb["message"]["chat"]["id"]
-        cb_data = cb.get("data", "")
-
-        if cb_data == "create_name":
-            answer_callback(cb_id)
-            send_message(
-                chat_id,
-                "🛰 <b>Send me any Name or Word!</b>\n\n"
-                "<i>Example:</i> <code>Muhammad</code> or <code>NASA</code>\n\n"
-                "💡 <i>Tips:</i> You can also specify style like: <code>Muhammad 2</code>"
-            )
-        elif cb_data.startswith("style_"):
-            parts = cb_data.split("_")
-            style_num = int(parts[1])
-            name = "_".join(parts[2:])
-
-            answer_callback(cb_id, text=f"Generating Style {style_num}...")
-            send_message(chat_id, f"🛰 <i>Generating Landsat satellite image for <b>{name}</b> (Style {style_num})...</i>")
-
-            img_bytes = generate_landsat_image(name, style_val=style_num)
-            if img_bytes:
-                markup = {
-                    "inline_keyboard": [
-                        [
-                            {"text": "🔄 Style 1", "callback_data": f"style_1_{name}"},
-                            {"text": "🔄 Style 2", "callback_data": f"style_2_{name}"},
-                            {"text": "🔄 Style 3", "callback_data": f"style_3_{name}"}
-                        ],
-                        [
-                            {"text": "🔄 Style 4", "callback_data": f"style_4_{name}"},
-                            {"text": "🔄 Style 5", "callback_data": f"style_5_{name}"}
-                        ],
-                        [{"text": "✨ New Name", "callback_data": "create_name"}]
-                    ]
+def fetch_inflact_hd_profile(username):
+    files = {'url': (None, username)}
+    try:
+        res = requests.post(
+            PROFILE_API_URL,
+            headers=HEADERS,
+            cookies=COOKIES,
+            files=files,
+            timeout=15
+        )
+        if res.status_code == 200:
+            data = res.json()
+            profile = data.get("data", {}).get("profile")
+            if profile:
+                hd_url = profile.get("profile_pic_url_hd") or profile.get("profile_pic_download_url") or profile.get("profile_pic_url")
+                return {
+                    "live_found": True,
+                    "id": profile.get("id"),
+                    "username": profile.get("username"),
+                    "full_name": profile.get("full_name"),
+                    "biography": profile.get("biography"),
+                    "followers": profile.get("edge_followed_by", {}).get("count"),
+                    "following": profile.get("edge_follow", {}).get("count"),
+                    "is_private": profile.get("is_private"),
+                    "is_verified": profile.get("is_verified"),
+                    "profile_pic_hd": hd_url
                 }
-                caption = f"🛰 <b>NASA Landsat Satellite View</b>\n🏷 <b>Name:</b> <code>{name}</code> | <b>Style:</b> {style_num}"
-                send_photo(chat_id, img_bytes, caption, reply_markup=markup)
-            else:
-                send_message(chat_id, "❌ <i>Failed to generate satellite photo. Please try again!</i>")
-        return "OK"
+    except Exception as e:
+        print("Fetch HD error:", e)
+    return {"live_found": False}
 
-    # ২. মেসেজ হ্যান্ডেল
-    if "message" in data:
-        msg = data["message"]
-        chat_id = msg["chat"]["id"]
-        text = msg.get("text", "").strip()
+@app.route('/', methods=['GET'])
+def index():
+    return clean_json_response({
+        "status": "Online",
+        "service": "Instagram True HD & Local BD Info API",
+        "usage": {
+            "by_username": "/api/ig?username=bashars_business",
+            "by_phone": "/api/ig?phone=01636040344",
+            "direct_hd_pic": "/api/ig/dp?username=bashars_business"
+        }
+    })
 
-        if text.startswith("/start"):
-            welcome_caption = (
-                "⚡️ <b>WELCOME TO NASA LANDSAT BOT</b> ⚡️\n\n"
-                "◈──────────────────────────◈\n\n"
-                "🛰 <b>Your Name in Landsat Satellite Imagery</b>\n"
-                "📸 <i>Generate breathtaking orbital satellite names powered by NASA Landsat.</i>\n\n"
-                "◈──────────────────────────◈\n\n"
-                "👇 <b>Select an option from below to begin:</b>"
-            )
-            markup = {
-                "inline_keyboard": [
-                    [{"text": "🛰 Create Landsat Name 🛰", "callback_data": "create_name"}]
-                ]
-            }
-            send_video(chat_id, WELCOME_VIDEO, welcome_caption, reply_markup=markup)
-            return "OK"
+@app.route('/api/ig', methods=['GET'])
+def get_user_info():
+    username = request.args.get('username', '').strip().lower().replace('@', '')
+    phone = request.args.get('phone', '').strip()
+    query = request.args.get('query', '').strip()
 
-        # নাম প্রসেস করা
-        if text:
-            # স্টাইল প্যারামিটার চেক (যেমন: Muhammad 2)
-            parts = text.split()
-            style_val = None
-            if len(parts) > 1 and parts[-1].isdigit() and 1 <= int(parts[-1]) <= 5:
-                style_val = int(parts[-1])
-                name = " ".join(parts[:-1])
-            else:
-                name = text
+    if query:
+        if query.startswith(('01', '+880', '880')):
+            phone = query
+        else:
+            username = query.lower().replace('@', '')
 
-            send_message(chat_id, f"🛰 <i>Processing NASA satellite data for <b>{name}</b>...</i>")
+    local_data = None
 
-            img_bytes = generate_landsat_image(name, style_val=style_val)
-            if img_bytes:
-                markup = {
-                    "inline_keyboard": [
-                        [
-                            {"text": "🔄 Style 1", "callback_data": f"style_1_{name}"},
-                            {"text": "🔄 Style 2", "callback_data": f"style_2_{name}"},
-                            {"text": "🔄 Style 3", "callback_data": f"style_3_{name}"}
-                        ],
-                        [
-                            {"text": "🔄 Style 4", "callback_data": f"style_4_{name}"},
-                            {"text": "🔄 Style 5", "callback_data": f"style_5_{name}"}
-                        ],
-                        [{"text": "✨ Create Another Name", "callback_data": "create_name"}]
-                    ]
-                }
-                caption = f"🛰 <b>NASA Landsat Satellite View</b>\n🏷 <b>Name:</b> <code>{name}</code>"
-                send_photo(chat_id, img_bytes, caption, reply_markup=markup)
-            else:
-                send_message(chat_id, "⚠️ <i>Please send a valid English name containing letters A-Z.</i>")
+    if phone:
+        local_data = DB_BY_PHONE.get(normalize_phone(phone))
+        if local_data and not username:
+            username = (local_data.get('username') or '').lower()
 
-    return "OK"
+    if username and not local_data:
+        local_data = DB_BY_USERNAME.get(username)
+
+    live_data = {}
+    if username:
+        live_data = fetch_inflact_hd_profile(username)
+
+    if not local_data and not live_data.get("live_found"):
+        return clean_json_response({
+            "status": "not_found",
+            "message": "Neither local record nor live Instagram profile found."
+        }), 404
+
+    return clean_json_response({
+        "status": "success",
+        "local_db_matched": bool(local_data),
+        "live_instagram_matched": live_data.get("live_found", False),
+        "local_records": local_data if local_data else {
+            "message": "Phone number or email not in local bd_users.json"
+        },
+        "instagram_profile": {
+            "username": username or (local_data.get("username") if local_data else None),
+            "name": live_data.get("full_name") or (local_data.get("name") if local_data else None),
+            "biography": live_data.get("biography"),
+            "followers": live_data.get("followers"),
+            "following": live_data.get("following"),
+            "is_private": live_data.get("is_private"),
+            "is_verified": live_data.get("is_verified"),
+            "profile_pic_hd": live_data.get("profile_pic_hd")
+        }
+    })
+
+@app.route('/api/ig/dp', methods=['GET'])
+def get_hd_picture_stream():
+    username = request.args.get('username') or request.args.get('id') or request.args.get('query') or ''
+    username = username.strip().lower().replace('@', '')
+
+    if not username:
+        return "Username is required", 400
+
+    live_data = fetch_inflact_hd_profile(username)
+    hd_url = live_data.get("profile_pic_hd")
+
+    if not hd_url:
+        return "HD image could not be fetched", 404
+
+    try:
+        img_res = requests.get(hd_url, headers={"User-Agent": HEADERS["user-agent"]}, timeout=15)
+        return Response(img_res.content, mimetype=img_res.headers.get('Content-Type', 'image/jpeg'))
+    except Exception as e:
+        return str(e), 500
 
 if __name__ == '__main__':
     app.run()
