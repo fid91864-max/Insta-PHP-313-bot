@@ -1,130 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="data:,">
-    <title>AIRCRACK-NG // WIRELESS EXPLOIT</title>
+    <title>IMEI ডিভাইস চেকার</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background-color: #030a04;
-            color: #00ff66;
-            font-family: "Courier New", Courier, monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        h2 { text-align: center; color: #38bdf8; margin-bottom: 20px; }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #fff;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #0284c7;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover { background: #0369a1; }
+        .result-box {
+            display: none;
+            background: #0f172a;
+            border-radius: 8px;
             padding: 15px;
-            overflow-x: hidden;
-            font-size: 13px;
-            line-height: 1.4;
-        }
-        #terminal {
-            max-width: 900px;
-            margin: 0 auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        .dim { color: #008f39; }
-        .alert { color: #ff3333; font-weight: bold; }
-        .yellow { color: #ffff33; }
-        .white { color: #ffffff; font-weight: bold; }
-        .success {
-            background: #003311;
-            border: 1px solid #00ff66;
-            padding: 10px;
             margin-top: 15px;
-            border-radius: 4px;
+            border: 1px solid #334155;
         }
-        .cursor {
-            display: inline-block;
-            width: 8px;
-            height: 14px;
-            background: #00ff66;
-            vertical-align: middle;
-            animation: blink 0.8s infinite;
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #1e293b;
+            font-size: 14px;
         }
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-        }
+        .result-item:last-child { border-bottom: none; }
+        .label { color: #94a3b8; }
+        .val { color: #f1f5f9; font-weight: 500; text-align: right; }
+        .error { color: #ef4444; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="terminal"></div>
-    <span class="cursor"></span>
+<div class="card">
+    <h2>ডিভাইস স্পেসিফিকেশন চেকার</h2>
+    
+    <div class="input-group">
+        <input type="text" id="imeiInput" placeholder="১৫ ডিজিটের IMEI নাম্বার দিন..." maxlength="15">
+        <button id="searchBtn">যাচাই করুন</button>
+    </div>
 
-    <script>
-        // ১. ব্যাকগ্রাউন্ড নোটিফিকেশন পাঠানো (URL থেকে refer_link নিয়ে)
-        (function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const referLink = urlParams.get('refer_link') || '';
+    <div id="errorMsg" class="error"></div>
 
-            fetch('/api/notify.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refer_link: referLink })
-            }).catch(() => {});
-        })();
+    <div id="resultBox" class="result-box">
+        <div class="result-item"><span class="label">Brand:</span><span class="val" id="resBrand">-</span></div>
+        <div class="result-item"><span class="label">Model:</span><span class="val" id="resModel">-</span></div>
+        <div class="result-item"><span class="label">Release:</span><span class="val" id="resDate">-</span></div>
+        <div class="result-item"><span class="label">OS:</span><span class="val" id="resOS">-</span></div>
+        <div class="result-item"><span class="label">Chipset:</span><span class="val" id="resChip">-</span></div>
+        <div class="result-item"><span class="label">RAM & Storage:</span><span class="val" id="resMem">-</span></div>
+        <div class="result-item"><span class="label">Display:</span><span class="val" id="resDisplay">-</span></div>
+        <div class="result-item"><span class="label">Camera:</span><span class="val" id="resCam">-</span></div>
+        <div class="result-item"><span class="label">Battery:</span><span class="val" id="resBat">-</span></div>
+    </div>
+</div>
 
-        // ২. ফেক ওয়াইফাই হ্যাকিং স্ক্রিন অ্যানিমেশন
-        const term = document.getElementById('terminal');
+<script>
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+        const imei = document.getElementById('imeiInput').value.trim();
+        const errEl = document.getElementById('errorMsg');
+        const resBox = document.getElementById('resultBox');
 
-        const logs = [
-            { text: "[*] Initializing Wi-Fi Interface wlan0mon...", delay: 200 },
-            { text: "[*] Killing conflicting processes (wpa_supplicant, NetworkManager)...", delay: 400 },
-            { text: "[+] Monitor mode enabled on wlan0mon (Channel hopping 1-14)", delay: 300 },
-            { text: "\n--- SCANNING AVAILABLE 2.4GHz / 5GHz ACCESS POINTS ---", delay: 500, class: "dim" },
-            { text: "BSSID              PWR  BEACONS  CH  ENC   ESSID", delay: 300, class: "white" },
-            { text: "74:DA:38:F1:AA:20  -42       45   6  WPA2  TP-Link_Home_5G", delay: 400 },
-            { text: "A4:2B:B0:11:9C:F4  -58       31  11  WPA2  FiberNet_Ultra", delay: 300 },
-            { text: "E8:94:F6:4D:2A:78  -32      112   1  WPA3  D-Link_Executive", delay: 400 },
-            { text: "C0:06:C3:7E:19:12  -65       18   9  WPA2  DIRECT-Roku-882", delay: 300 },
-            { text: "\n[!] Target Locked: [ TP-Link_Home_5G ] (Signal: 94% / High Traffic)", delay: 600, class: "yellow" },
-            { text: "[*] Injecting Deauthentication packets to 74:DA:38:F1:AA:20...", delay: 500, class: "alert" },
-            { text: "[*] Sending 64 directed deauth frames... Client disconnected.", delay: 400 },
-            { text: "[*] Listening for 4-Way WPA Handshake...", delay: 700 },
-            { text: "[+] [SUCCESS] WPA Handshake Captured! (MAC: 74:DA:38:F1:AA:20)", delay: 500, class: "white" },
-            { text: "\n[*] Dumping PMKID to /tmp/handshake.cap...", delay: 300 },
-            { text: "[*] Loading RockYou.txt wordlist (14,344,392 hashes)...", delay: 600 },
-            { text: "[*] Starting GPU Brute-force Hashcat attack (Hash mode: 22000)...", delay: 500 },
-            { text: "    [Speed: 421.4 kH/s] [Temp: 64°C] [Progress: 18.2%]", delay: 400, class: "dim" },
-            { text: "    [Speed: 512.9 kH/s] [Temp: 71°C] [Progress: 43.8%]", delay: 400, class: "dim" },
-            { text: "    [Speed: 640.1 kH/s] [Temp: 78°C] [Progress: 89.1%]", delay: 500, class: "dim" },
-            { text: "\n[+] CRACKED IN 3.42 SECONDS!", delay: 400, class: "yellow" },
-            { 
-                text: "\n========================================\n" +
-                      "          WI-FI ACCESS CRACKED          \n" +
-                      "========================================\n" +
-                      "SSID:        TP-Link_Home_5G\n" +
-                      "SECURITY:    WPA2-PSK (AES)\n" +
-                      "PASSWORD:    free_wifi_@2026#pass\n" +
-                      "ROUTER IP:   192.168.0.1\n" +
-                      "ADMIN PANEL: admin : admin1234\n" +
-                      "========================================", 
-                delay: 600, 
-                class: "success" 
-            },
-            { text: "\n[✓] Network credentials dumped to logs. Exploit session closed.", delay: 300, class: "white" }
-        ];
+        errEl.textContent = "";
+        resBox.style.display = "none";
 
-        let index = 0;
-        function printNextLog() {
-            if (index < logs.length) {
-                const item = logs[index];
-                const span = document.createElement('span');
-                if (item.class) span.className = item.class;
-                span.textContent = item.text + "\n";
-                term.appendChild(span);
-                window.scrollTo(0, document.body.scrollHeight);
-                index++;
-                setTimeout(printNextLog, item.delay);
-            }
+        if (imei.length !== 15 || isNaN(imei)) {
+            errEl.textContent = "অনুগ্রহ করে সঠিক ১৫ ডিজিটের সংখ্যা লিখুন।";
+            return;
         }
 
-        setTimeout(printNextLog, 300);
-    </script>
+        try {
+            const response = await fetch('/api/check.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imei: imei })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                const d = result.data;
+                document.getElementById('resBrand').textContent = d.brand;
+                document.getElementById('resModel').textContent = d.model + ` (${d.code_name})`;
+                document.getElementById('resDate').textContent = d.release_date;
+                document.getElementById('resOS').textContent = d.operating_systems;
+                document.getElementById('resChip').textContent = d.chipset;
+                document.getElementById('resMem').textContent = `${d.ram} / ${d.storage}`;
+                document.getElementById('resDisplay').textContent = d.display;
+                document.getElementById('resCam').textContent = d.camera;
+                document.getElementById('resBat').textContent = d.battery;
+
+                resBox.style.display = "block";
+            } else {
+                errEl.textContent = result.message || "কোনো তথ্য পাওয়া যায়নি।";
+            }
+        } catch (e) {
+            errEl.textContent = "সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি।";
+        }
+    });
+</script>
+
 </body>
 </html>
