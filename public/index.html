@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>স্বাগতম</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #0f172a;
+            color: #ffffff;
+            text-align: center;
+        }
+        .card {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            max-width: 420px;
+            width: 90%;
+        }
+        h1 {
+            color: #38bdf8;
+            margin-bottom: 12px;
+            font-size: 24px;
+        }
+        p {
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>আমাদের ওয়েবসাইটে স্বাগতম</h1>
+        <p>আপনার ভিজিট সফলভাবে নথিভুক্ত হয়েছে।</p>
+    </div>
+
+    <script>
+        // পেজ লোড হলেই স্বয়ংক্রিয়ভাবে নোটিফিকেশন পাঠাবে
+        window.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/notify.php', { method: 'POST' })
+                .catch(err => console.error("Error triggering notify:", err));
+        });
+    </script>
+</body>
+</html>
