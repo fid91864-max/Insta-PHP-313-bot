@@ -3,7 +3,6 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET");
 
-// URL theke bin ba card number neya
 $rawInput = $_GET['bin'] ?? $_GET['card'] ?? '';
 $cleanInput = preg_replace('/\D/', '', $rawInput);
 
@@ -16,17 +15,15 @@ if (empty($cleanInput) || strlen($cleanInput) < 6) {
     exit;
 }
 
-// Prothom 6 digit (BIN) neya
 $bin = substr($cleanInput, 0, 6);
 
-// Luhn check (jodi full card number thake)
 function validateLuhn($number) {
     $sum = 0;
     $length = strlen($number);
     $parity = $length % 2;
     for ($i = $length - 1; $i >= 0; $i--) {
         $digit = intval($number[$i]);
-        if ($i % 2 == $parity) {
+        if ($i % 2 === $parity) {
             $digit *= 2;
             if ($digit > 9) {
                 $digit -= 9;
@@ -37,12 +34,11 @@ function validateLuhn($number) {
     return ($sum % 10 === 0);
 }
 
-$luhnStatus = (strlen($cleanInput) >= 13) ? (validateLuhn($cleanInput) ? "Valid" : "Invalid") : "BIN Check Only";
+$luhnStatus = (strlen($cleanInput) >= 13) 
+              ? (validateLuhn($cleanInput) ? "Valid" : "Invalid") 
+              : "BIN Check Only";
 
-// BIN details fetch kora
-$binApiUrl = "https://data.handyapi.com/bin/" . $bin;
-
-$ch = curl_init($binApiUrl);
+$ch = curl_init("https://data.handyapi.com/bin/" . $bin);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_TIMEOUT, 8);
 curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
