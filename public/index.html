@@ -9,12 +9,12 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0b0f19; color: #f8fafc; padding: 20px; }
         .box { max-width: 900px; margin: 0 auto; background: #131c31; border: 1px solid #1e293b; padding: 30px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         h2 { color: #38bdf8; margin-bottom: 20px; }
-        .login-box { max-width: 400px; margin: 100px auto; background: #131c31; border: 1px solid #1e293b; padding: 30px; border-radius: 14px; text-align: center; }
+        .login-box { max-width: 400px; margin: 80px auto; background: #131c31; border: 1px solid #1e293b; padding: 30px; border-radius: 14px; text-align: center; }
         input, button { padding: 12px 16px; border-radius: 8px; border: 1px solid #334155; font-size: 15px; }
         input { background: #0b0f19; color: #fff; outline: none; }
         button { background: #0284c7; color: #fff; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:hover { background: #0369a1; }
-        .form-row { display: flex; gap: 10px; margin-bottom: 25px; }
+        .form-row { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #1e293b; }
         th { background: #0b0f19; color: #94a3b8; }
@@ -24,14 +24,16 @@
         .btn-del { background: #ef4444; padding: 6px 12px; font-size: 13px; }
         .btn-del:hover { background: #dc2626; }
         code { background: #0b0f19; padding: 4px 8px; border-radius: 4px; color: #38bdf8; font-family: monospace; }
+        .err-text { color: #f87171; font-size: 14px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
 <div id="loginSection" class="login-box">
     <h2>অ্যাডমিন লগইন</h2>
-    <input type="password" id="adminPass" placeholder="পাসওয়ার্ড দিন (9876543210)..." style="width: 100%; margin-bottom: 15px;">
+    <input type="password" id="adminPass" placeholder="পাসওয়ার্ড লিখুন..." style="width: 100%; margin-bottom: 15px;">
     <button onclick="login()" style="width: 100%;">লগইন করুন</button>
+    <div id="loginError" class="err-text">ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।</div>
 </div>
 
 <div id="dashboardSection" class="box" style="display: none;">
@@ -41,7 +43,7 @@
     </div>
 
     <div class="form-row">
-        <input type="text" id="keyPrefix" placeholder="Prefix (যেমন: USER)" value="VIP">
+        <input type="text" id="keyPrefix" placeholder="Prefix (যেমন: VIP)" value="VIP">
         <input type="number" id="keyLimit" placeholder="রিকোয়েস্ট লিমিট (যেমন: 100)" value="100">
         <button onclick="createKey()">+ নতুন Key তৈরি করুন</button>
     </div>
@@ -62,44 +64,77 @@
 <script>
     let token = localStorage.getItem('admin_token') || '';
 
-    if (token) checkAuth();
+    // পেজ লোড হলে চেক করবে
+    if (token) {
+        checkAuth(token);
+    }
 
-    function login() {
-        token = document.getElementById('adminPass').value.trim();
-        localStorage.setItem('admin_token', token);
-        checkAuth();
+    async function login() {
+        const pass = document.getElementById('adminPass').value.trim();
+        if (!pass) return;
+        document.getElementById('loginError').style.display = 'none';
+        await checkAuth(pass, true);
     }
 
     function logout() {
         localStorage.removeItem('admin_token');
-        location.reload();
+        token = '';
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('dashboardSection').style.display = 'none';
+        document.getElementById('adminPass').value = '';
     }
 
-    async function checkAuth() {
+    async function checkAuth(testPass, isManualLogin = false) {
         try {
             const res = await fetch('/api/manage.php', {
-                headers: { 'Authorization': 'Bearer ' + token }
+                method: 'GET',
+                headers: { 
+                    'X-Admin-Token': testPass,
+                    'Authorization': 'Bearer ' + testPass 
+                }
             });
+
             if (res.status === 200) {
+                token = testPass;
+                localStorage.setItem('admin_token', token);
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('dashboardSection').style.display = 'block';
-                loadKeys();
+                const data = await res.json();
+                renderTable(data);
             } else {
-                alert("ভুল পাসওয়ার্ড!");
-                logout();
+                if (isManualLogin) {
+                    document.getElementById('loginError').style.display = 'block';
+                } else {
+                    logout();
+                }
             }
         } catch (e) {
-            alert("সার্ভার এরর!");
+            console.error(e);
+            alert("সার্ভারের সাথে সংযোগ করা যাচ্ছে না!");
         }
     }
 
     async function loadKeys() {
         const res = await fetch('/api/manage.php', {
-            headers: { 'Authorization': 'Bearer ' + token }
+            headers: { 
+                'X-Admin-Token': token,
+                'Authorization': 'Bearer ' + token 
+            }
         });
-        const data = await res.json();
+        if (res.status === 200) {
+            const data = await res.json();
+            renderTable(data);
+        }
+    }
+
+    function renderTable(data) {
         const tbody = document.getElementById('keysTable');
         tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #94a3b8;">কোনো API Key তৈরি করা হয়নি।</td></tr>';
+            return;
+        }
 
         data.forEach(item => {
             const isExhausted = item.req_used >= item.req_limit;
@@ -121,11 +156,12 @@
     }
 
     async function createKey() {
-        const prefix = document.getElementById('keyPrefix').value;
+        const prefix = document.getElementById('keyPrefix').value.trim();
         const limit = document.getElementById('keyLimit').value;
         await fetch('/api/manage.php', {
             method: 'POST',
             headers: { 
+                'X-Admin-Token': token,
                 'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
             },
@@ -138,7 +174,10 @@
         if (!confirm("আপনি কি নিশ্চিত এই Key মুছে ফেলতে চান?")) return;
         await fetch('/api/manage.php?id=' + id, {
             method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + token }
+            headers: { 
+                'X-Admin-Token': token,
+                'Authorization': 'Bearer ' + token 
+            }
         });
         loadKeys();
     }
