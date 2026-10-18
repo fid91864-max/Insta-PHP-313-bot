@@ -7,26 +7,24 @@ header("Access-Control-Allow-Headers: Content-Type, X-API-KEY");
 $supabaseUrl = "https://mvogzotkhobfuhzebyvk.supabase.co";
 $supabaseKey = "sb_secret_gMS0t901S53a4cjgBNVa7w_D92xGjpj";
 
-// ১. কী ফাইল রিড ও রাইট ফাংশন
 $jsonPath = __DIR__ . '/../data/keys.json';
 
 function getKeysData($path) {
     if (!file_exists($path)) return [];
-    $content = file_get_contents($path);
-    return json_decode($content, true) ?: [];
+    return json_decode(file_get_contents($path), true) ?: [];
 }
 
 function saveKeysData($path, $data) {
     file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
 }
 
-// ২. API Key ভ্যালিডেশন ও লিমিট যাচাই
-$headers = getallheaders();
+// API Key চেক করা
+$headers = function_exists('getallheaders') ? getallheaders() : [];
 $apiKey = $_GET['key'] ?? $headers['X-API-KEY'] ?? $headers['x-api-key'] ?? '';
 
 if (empty($apiKey)) {
     http_response_code(401);
-    echo json_encode(["status" => "error", "message" => "Missing API Key! Pass via '?key=...' or 'X-API-KEY' header."]);
+    echo json_encode(["status" => "error", "message" => "API Key প্রদান করুন (?key=... অথবা হেডার দিয়ে)।"]);
     exit;
 }
 
@@ -42,7 +40,7 @@ foreach ($keys as $idx => $k) {
 
 if ($foundIndex === -1) {
     http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Invalid API Key!"]);
+    echo json_encode(["status" => "error", "message" => "ভুল API Key!"]);
     exit;
 }
 
@@ -50,7 +48,7 @@ $currentKey = $keys[$foundIndex];
 
 if ($currentKey['status'] !== 'active') {
     http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "API Key is suspended!"]);
+    echo json_encode(["status" => "error", "message" => "API Key স্থগিত আছে!"]);
     exit;
 }
 
@@ -58,12 +56,12 @@ if ($currentKey['req_used'] >= $currentKey['req_limit']) {
     http_response_code(429);
     echo json_encode([
         "status" => "error",
-        "message" => "Request limit exhausted! Used: {$currentKey['req_used']}/{$currentKey['req_limit']}"
+        "message" => "রিকোয়েস্ট লিমিট শেষ! ব্যবহৃত: {$currentKey['req_used']}/{$currentKey['req_limit']}"
     ]);
     exit;
 }
 
-// ৩. ফোন ভ্যারিয়েন্ট তৈরি ফাংশন (+972, 05, etc.)
+// ফোন ভ্যারিয়েন্ট তৈরির ফাংশন
 function generatePhoneVariants($phoneStr) {
     $digits = preg_replace('/\D/', '', $phoneStr);
     $variants = [];
@@ -82,7 +80,7 @@ function generatePhoneVariants($phoneStr) {
     return array_values(array_unique($variants));
 }
 
-// ৪. সার্চ প্যারামিটার
+// ফিল্টার প্যারামিটার
 $q        = trim($_GET['q'] ?? '');
 $phone    = trim($_GET['phone'] ?? '');
 $username = trim($_GET['username'] ?? '');
@@ -124,7 +122,7 @@ if (!empty($q)) {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Provide at least one parameter: q, phone, username, user_id, name, or email"
+        "message" => "যেকোনো একটি প্যারামিটার দিন: q, phone, username, user_id, name, অথবা email"
     ]);
     exit;
 }
@@ -133,7 +131,6 @@ if (!empty($platform)) {
     $params['platform'] = "eq." . $platform;
 }
 
-// ৫. Supabase Contacts টেবিলে রিকোয়েস্ট
 $queryStr = http_build_query($params);
 $ch = curl_init("{$supabaseUrl}/rest/v1/contacts?{$queryStr}");
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -150,7 +147,7 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 if ($httpCode === 200) {
-    // লিমিট কাউন্ট ১ বাড়ানো
+    // সফল হলে ব্যবহৃত রিকোয়েস্ট সংখ্যা ১ বাড়ানো
     $keys[$foundIndex]['req_used'] += 1;
     saveKeysData($jsonPath, $keys);
 
