@@ -3,23 +3,5 @@
     "api/*.php": {
       "runtime": "vercel-php@0.7.3"
     }
-  },
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/secret-admin-9876",
-      "dest": "/public/secret-admin-9876.html"
-    },
-    {
-      "src": "/secret-admin-9876.html",
-      "dest": "/public/secret-admin-9876.html"
-    },
-    {
-      "src": "/",
-      "dest": "/public/index.html"
-    }
-  ]
+  }
 }
