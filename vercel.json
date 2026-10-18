@@ -10,8 +10,12 @@
       "dest": "/api/$1"
     },
     {
+      "src": "/secret-admin-9876",
+      "dest": "/public/secret-panel.html"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/public/$1"
+      "dest": "/public/index.html"
     }
   ]
 }
