@@ -1,54 +1,69 @@
 <?php
-// ১. সমস্ত এরর ডিসপ্লে সম্পূর্ণ অফ
-error_reporting(0);
-ini_set('display_errors', '0');
-
-// ২. হার্ডেনড সিকিউরিটি হেডার্স
+header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET");
-header("Content-Type: application/json; charset=UTF-8");
-header("X-Content-Type-Options: nosniff");
-header("X-Frame-Options: DENY");
-header("X-XSS-Protection: 1; mode=block");
+header("Access-Control-Allow-Headers: Content-Type, X-API-KEY");
 
-// ৩. ক্রলার ও ম্যালিশিয়াস টুলস ব্লকার
-$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-$badAgents = ['sqlmap', 'nikto', 'nmap', 'postman', 'censys', 'shodan', 'masscan'];
-foreach ($badAgents as $bad) {
-    if (stripos($userAgent, $bad) !== false) {
-        http_response_code(403);
-        echo json_encode(["status" => "error", "message" => "Forbidden"], JSON_UNESCAPED_UNICODE);
-        exit;
+$supabaseUrl = "https://mvogzotkhobfuhzebyvk.supabase.co";
+$supabaseKey = "sb_secret_gMS0t901S53a4cjgBNVa7w_D92xGjpj";
+
+// ১. কী ফাইল রিড ও রাইট ফাংশন
+$jsonPath = __DIR__ . '/../data/keys.json';
+
+function getKeysData($path) {
+    if (!file_exists($path)) return [];
+    $content = file_get_contents($path);
+    return json_decode($content, true) ?: [];
+}
+
+function saveKeysData($path, $data) {
+    file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
+}
+
+// ২. API Key ভ্যালিডেশন ও লিমিট যাচাই
+$headers = getallheaders();
+$apiKey = $_GET['key'] ?? $headers['X-API-KEY'] ?? $headers['x-api-key'] ?? '';
+
+if (empty($apiKey)) {
+    http_response_code(401);
+    echo json_encode(["status" => "error", "message" => "Missing API Key! Pass via '?key=...' or 'X-API-KEY' header."]);
+    exit;
+}
+
+$keys = getKeysData($jsonPath);
+$foundIndex = -1;
+
+foreach ($keys as $idx => $k) {
+    if ($k['api_key'] === $apiKey) {
+        $foundIndex = $idx;
+        break;
     }
 }
 
-// ৪. ডাইনামিক স্ট্রিং রিকনস্ট্রাকশন (গিটহাবের স্ক্যানার কোনো প্যাটার্ন পাবে না)
-function getDecryptedConfig() {
-    // Supabase URL: https://mvogzotkhobfuhzebyvk.supabase.co
-    $uPart1 = "https://" . "mvogzotkhobfuhzebyvk";
-    $uPart2 = "." . "supabase" . ".co";
-    $finalUrl = $uPart1 . $uPart2;
-
-    // Supabase Secret Key: sb_secret_gMS0t901S53a4cjgBNVa7w_D92xGjpj
-    // হেক্স এবং স্প্লিট আকারে বিভক্ত যাতে গিটহাব স্ক্যান করতে না পারে
-    $prefix = pack("H*", "73625f7365637265745f"); // 'sb_secret_' হেক্সাডেসিমাল থেকে ডিকোড
-    $body1  = "gMS0t901S53a";
-    $body2  = "4cjgBNVa7w_";
-    $body3  = "D92xGjpj";
-    $finalKey = $prefix . $body1 . $body2 . $body3;
-
-    return [
-        'url' => $finalUrl,
-        'key' => $finalKey
-    ];
+if ($foundIndex === -1) {
+    http_response_code(403);
+    echo json_encode(["status" => "error", "message" => "Invalid API Key!"]);
+    exit;
 }
 
-$cfg = getDecryptedConfig();
-$supabaseUrl = $cfg['url'];
-$supabaseKey = $cfg['key'];
-unset($cfg); // প্রসেসিং শেষেই মেমোরি ক্লিন
+$currentKey = $keys[$foundIndex];
 
-// ৫. ফোন নাম্বার ভেরিয়েন্ট তৈরির লজিক (আপনার মূল পাইথন কোডের অনুরূপ)
+if ($currentKey['status'] !== 'active') {
+    http_response_code(403);
+    echo json_encode(["status" => "error", "message" => "API Key is suspended!"]);
+    exit;
+}
+
+if ($currentKey['req_used'] >= $currentKey['req_limit']) {
+    http_response_code(429);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Request limit exhausted! Used: {$currentKey['req_used']}/{$currentKey['req_limit']}"
+    ]);
+    exit;
+}
+
+// ৩. ফোন ভ্যারিয়েন্ট তৈরি ফাংশন (+972, 05, etc.)
 function generatePhoneVariants($phoneStr) {
     $digits = preg_replace('/\D/', '', $phoneStr);
     $variants = [];
@@ -67,7 +82,7 @@ function generatePhoneVariants($phoneStr) {
     return array_values(array_unique($variants));
 }
 
-// ৬. ইনপুট স্যানিটাইজেশন
+// ৪. সার্চ প্যারামিটার
 $q        = trim($_GET['q'] ?? '');
 $phone    = trim($_GET['phone'] ?? '');
 $username = trim($_GET['username'] ?? '');
@@ -77,98 +92,84 @@ $email    = trim($_GET['email'] ?? '');
 $platform = trim($_GET['platform'] ?? '');
 $limit    = trim($_GET['limit'] ?? '50');
 
-if (!ctype_digit($limit) || intval($limit) > 100 || intval($limit) < 1) {
-    $limit = "50";
-}
-
-$endpoint = $supabaseUrl . "/rest/v1/contacts";
-$queryParams = [
-    "select" => "id,user_id,username,full_name,phone,email,city,platform",
-    "limit"  => $limit
+$params = [
+    'select' => 'id,user_id,username,full_name,phone,email,city,platform',
+    'limit'  => $limit
 ];
 
-// প্যারামিটার অনুযায়ী সুপাবেজ ফিল্টার সাজানো
 if (!empty($q)) {
     $variants = generatePhoneVariants($q);
-    $conds = [];
+    $conditions = [];
     foreach ($variants as $v) {
-        $conds[] = "phone.eq." . $v;
+        $conditions[] = "phone.eq." . $v;
     }
-    $conds[] = "username.ilike.*" . $q . "*";
-    $conds[] = "full_name.ilike.*" . $q . "*";
-    $conds[] = "user_id.eq." . $q;
-    $conds[] = "email.ilike.*" . $q . "*";
-    $queryParams["or"] = "(" . implode(',', $conds) . ")";
+    $conditions[] = "username.ilike.*" . $q . "*";
+    $conditions[] = "full_name.ilike.*" . $q . "*";
+    $conditions[] = "user_id.eq." . $q;
+    $conditions[] = "email.ilike.*" . $q . "*";
+    $params['or'] = '(' . implode(',', $conditions) . ')';
 } elseif (!empty($phone)) {
     $variants = generatePhoneVariants($phone);
-    $formatted = [];
-    foreach ($variants as $v) {
-        $formatted[] = '"' . $v . '"';
-    }
-    $queryParams["phone"] = "in.(" . implode(',', $formatted) . ")";
+    $quoted = array_map(fn($v) => '"' . $v . '"', $variants);
+    $params['phone'] = 'in.(' . implode(',', $quoted) . ')';
 } elseif (!empty($username)) {
-    $queryParams["username"] = "ilike.*" . $username . "*";
+    $params['username'] = "ilike.*" . $username . "*";
 } elseif (!empty($userId)) {
-    $queryParams["user_id"] = "eq." . $userId;
+    $params['user_id'] = "eq." . $userId;
 } elseif (!empty($name)) {
-    $queryParams["full_name"] = "ilike.*" . $name . "*";
+    $params['full_name'] = "ilike.*" . $name . "*";
 } elseif (!empty($email)) {
-    $queryParams["email"] = "ilike.*" . $email . "*";
+    $params['email'] = "ilike.*" . $email . "*";
 } else {
     http_response_code(400);
     echo json_encode([
         "status" => "error",
         "message" => "Provide at least one parameter: q, phone, username, user_id, name, or email"
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    ]);
     exit;
 }
 
 if (!empty($platform)) {
-    $queryParams["platform"] = "eq." . $platform;
+    $params['platform'] = "eq." . $platform;
 }
 
-// ৭. সিকিউর cURL কল
-$url = $endpoint . "?" . http_build_query($queryParams);
-
-$ch = curl_init();
-curl_setopt_array($ch, [
-    CURLOPT_URL            => $url,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT        => 15,
-    CURLOPT_SSL_VERIFYPEER => true,
-    CURLOPT_HTTPHEADER     => [
-        "apikey: " . $supabaseKey,
-        "Authorization: Bearer " . $supabaseKey,
-        "Content-Type: application/json"
-    ]
+// ৫. Supabase Contacts টেবিলে রিকোয়েস্ট
+$queryStr = http_build_query($params);
+$ch = curl_init("{$supabaseUrl}/rest/v1/contacts?{$queryStr}");
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "apikey: {$supabaseKey}",
+    "Authorization: Bearer {$supabaseKey}",
+    "Content-Type: application/json"
 ]);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$curlErr  = curl_error($ch);
 curl_close($ch);
 
-// মেমোরি থেকে কী ধ্বংস করা
-unset($supabaseKey);
-
-if ($curlErr) {
-    http_response_code(500);
-    echo json_encode(["status" => "error", "message" => "Database Connection Failed"], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 if ($httpCode === 200) {
-    $results = json_decode($response, true) ?? [];
+    // লিমিট কাউন্ট ১ বাড়ানো
+    $keys[$foundIndex]['req_used'] += 1;
+    saveKeysData($jsonPath, $keys);
+
+    $results = json_decode($response, true);
     echo json_encode([
-        "status"      => "success",
+        "status" => "success",
+        "key_usage" => [
+            "used" => $keys[$foundIndex]['req_used'],
+            "limit" => $keys[$foundIndex]['req_limit'],
+            "remaining" => max(0, $keys[$foundIndex]['req_limit'] - $keys[$foundIndex]['req_used'])
+        ],
         "total_found" => count($results),
-        "results"     => $results
+        "results" => $results
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 } else {
-    http_response_code(500);
+    http_response_code($httpCode);
     echo json_encode([
-        "status"    => "error",
-        "message"   => "Query execution error",
-        "http_code" => $httpCode
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        "status" => "error",
+        "http_code" => $httpCode,
+        "message" => json_decode($response, true) ?: $response
+    ]);
 }
