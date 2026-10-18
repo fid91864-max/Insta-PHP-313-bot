@@ -11,10 +11,14 @@
     },
     {
       "src": "/secret-admin-9876",
-      "dest": "/public/secret-panel.html"
+      "dest": "/public/secret-admin-9876.html"
     },
     {
-      "src": "/(.*)",
+      "src": "/secret-admin-9876.html",
+      "dest": "/public/secret-admin-9876.html"
+    },
+    {
+      "src": "/",
       "dest": "/public/index.html"
     }
   ]
