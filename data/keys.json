@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "api_key": "ADMIN_KEY_123456",
+    "req_limit": 500,
+    "req_used": 0,
+    "status": "active"
+  }
+]
