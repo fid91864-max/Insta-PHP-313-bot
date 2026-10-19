@@ -1,13 +1,13 @@
 {
   "functions": {
-    "detect.php": {
+    "api/*.php": {
       "runtime": "vercel-php@0.7.3"
     }
   },
   "routes": [
     {
-      "src": "/detect",
-      "dest": "/detect.php"
+      "src": "/api/order",
+      "dest": "/api/order.php"
     },
     {
       "src": "/",
