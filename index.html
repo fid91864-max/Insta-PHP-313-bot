@@ -2,560 +2,399 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#030712">
-<title>AI Image Detector 313</title>
+<title>TikTok Likes Booster 313</title>
+<!-- Cloudflare Turnstile API -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
 :root {
   --bg: #030712;
-  --card: #0b1324;
-  --card-border: #1e293b;
+  --card: rgba(15, 23, 42, 0.85);
+  --border: rgba(0, 242, 254, 0.2);
   --cyan: #00f2fe;
   --pink: #ff007f;
   --purple: #7928ca;
   --green: #10b981;
-  --red: #ef4444;
   --text: #f8fafc;
   --muted: #94a3b8;
 }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0;
+
+* {
+  box-sizing: border-box;
+  margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
   background: 
-    radial-gradient(circle at 10% 10%, #7928ca1f, transparent 40%),
-    radial-gradient(circle at 90% 90%, #00f2fe1a, transparent 40%),
-    radial-gradient(circle at 50% 50%, #ff007f10, transparent 60%),
+    radial-gradient(circle at 10% 10%, rgba(121, 40, 202, 0.25), transparent 45%),
+    radial-gradient(circle at 90% 90%, rgba(0, 242, 254, 0.2), transparent 45%),
     var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   min-height: 100vh;
+  padding: 16px 14px 40px;
 }
+
 .shell {
-  max-width: 1100px;
+  max-width: 460px;
   margin: 0 auto;
-  padding: 24px 18px 60px;
 }
+
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--card-border);
-  padding-bottom: 18px;
-  margin-bottom: 35px;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
 }
+
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  color: inherit;
+  gap: 10px;
 }
+
 .brand-icon {
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   border-radius: 12px;
   background: linear-gradient(135deg, var(--cyan), var(--pink));
   display: grid;
   place-items: center;
-  font-size: 22px;
-  box-shadow: 0 0 20px #00f2fe44;
+  font-size: 18px;
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
 }
-.brand-title {
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: .5px;
+
+.brand-text h2 {
+  font-size: 14px;
+  font-weight: 900;
 }
-.brand-sub {
-  font-size: 11px;
+
+.brand-text span {
+  font-size: 9px;
   color: var(--cyan);
-  letter-spacing: 1.5px;
   font-weight: 700;
+  letter-spacing: 1.5px;
 }
+
 .tg-btn {
-  background: #0f172a;
-  border: 1px solid #334155;
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid var(--border);
   color: var(--cyan);
   text-decoration: none;
-  padding: 8px 16px;
-  border-radius: 30px;
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all .2s ease;
-}
-.tg-btn:hover {
-  background: var(--cyan);
-  color: #030712;
-  box-shadow: 0 0 15px #00f2fe66;
-}
-.hero {
-  text-align: center;
-  margin-bottom: 35px;
-}
-.badge {
-  display: inline-block;
-  padding: 6px 14px;
-  background: #00f2fe12;
-  border: 1px solid #00f2fe33;
-  color: var(--cyan);
+  padding: 6px 12px;
   border-radius: 20px;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 1.5px;
-  margin-bottom: 12px;
 }
+
+.hero {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 5px 12px;
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid var(--border);
+  color: var(--cyan);
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
 h1 {
-  font-size: clamp(28px, 5vw, 46px);
-  margin: 0 0 12px;
-  letter-spacing: -1px;
-  line-height: 1.15;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
 }
-.gradient-text {
+
+.gradient {
   background: linear-gradient(90deg, #fff, var(--cyan), var(--pink));
   -webkit-background-clip: text;
   color: transparent;
 }
-.hero p {
-  color: var(--muted);
-  font-size: 14px;
-  max-width: 620px;
-  margin: 0 auto;
-  line-height: 1.8;
-}
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 22px;
-}
-.panel {
+
+/* Card */
+.main-card {
   background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: 20px;
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 10px 30px #00000055;
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+  margin-bottom: 20px;
 }
-.panel::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+
+.field {
+  margin-bottom: 15px;
 }
-.drop-zone {
-  border: 2px dashed #223249;
-  border-radius: 16px;
-  padding: 38px 20px;
-  text-align: center;
-  cursor: pointer;
-  background: #060a14;
-  transition: all .2s;
-}
-.drop-zone:hover, .drop-zone.dragover {
-  border-color: var(--cyan);
-  background: #00f2fe08;
-}
-.drop-icon {
-  font-size: 40px;
-  margin-bottom: 10px;
-}
-.drop-text {
-  font-size: 13px;
-  color: var(--muted);
-}
-.drop-text b {
-  color: var(--text);
-}
-#fileInput { display: none; }
-.or-divider {
-  text-align: center;
-  margin: 18px 0;
-  position: relative;
-  color: #475569;
+
+label {
+  display: block;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 6px;
 }
-.or-divider::before, .or-divider::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  width: 40%;
-  height: 1px;
-  background: #1e293b;
-}
-.or-divider::before { left: 0; }
-.or-divider::after { right: 0; }
-.input-box {
-  display: flex;
-  gap: 8px;
-}
+
 input[type="text"] {
-  flex: 1;
-  background: #060a14;
-  border: 1px solid var(--card-border);
+  width: 100%;
+  background: rgba(6, 10, 20, 0.85);
+  border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 14px;
+  padding: 14px;
   font-size: 13px;
   outline: none;
+  transition: 0.2s;
 }
+
 input[type="text"]:focus {
   border-color: var(--cyan);
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
 }
-.action-btn {
+
+.btn-submit {
+  width: 100%;
   background: linear-gradient(135deg, var(--cyan), var(--purple));
-  border: 0;
   color: #030712;
-  font-weight: 800;
-  padding: 12px 24px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all .2s;
-  box-shadow: 0 0 15px #00f2fe44;
-}
-.action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 25px #00f2fe88;
-}
-.preview-card {
-  display: none;
-  margin-top: 14px;
-  background: #060a14;
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-  padding: 10px;
-  align-items: center;
-  gap: 12px;
-}
-.preview-thumb {
-  width: 65px;
-  height: 65px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-.preview-name {
-  font-size: 12px;
-  word-break: break-all;
-}
-.res-empty {
-  height: 100%;
-  min-height: 280px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: var(--muted);
-  text-align: center;
-}
-.res-loader {
-  display: none;
-  text-align: center;
-  padding: 50px 0;
-}
-.spinner {
-  width: 46px;
-  height: 46px;
-  border: 3px solid #1e293b;
-  border-top-color: var(--cyan);
-  border-radius: 50%;
-  animation: spin 1s infinite linear;
-  margin: 0 auto 15px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.res-content {
-  display: none;
-}
-.verdict-banner {
-  padding: 16px;
-  border-radius: 14px;
-  text-align: center;
-  margin-bottom: 22px;
-  font-size: 22px;
+  border: 0;
+  font-size: 14px;
   font-weight: 900;
-  letter-spacing: .5px;
+  padding: 15px;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.35);
+  transition: all 0.2s;
 }
-.verdict-ai {
-  background: linear-gradient(135deg, #ff007f1a, #ef44441a);
-  border: 1px solid var(--pink);
-  color: #ff3366;
-  box-shadow: 0 0 25px #ff007f33;
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
-.verdict-real {
-  background: linear-gradient(135deg, #10b9811a, #00f2fe1a);
-  border: 1px solid var(--green);
-  color: var(--green);
-  box-shadow: 0 0 25px #10b98133;
+
+/* Timer HUD (Screenshot Style) */
+.timer-card {
+  display: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 25px 20px;
+  text-align: center;
+  margin-bottom: 20px;
 }
-.meter-row {
-  margin-bottom: 18px;
+
+.timer-circle {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 2px dashed var(--cyan);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 15px;
+  font-size: 24px;
+  font-weight: 900;
+  font-family: ui-monospace, Consolas, monospace;
+  color: var(--cyan);
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.2) inset;
 }
-.meter-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  margin-bottom: 6px;
-  font-weight: 700;
-}
-.progress-bar {
-  height: 8px;
-  background: #1e293b;
-  border-radius: 10px;
+
+.timer-progress {
+  width: 100%;
+  height: 12px;
+  background: rgba(6, 10, 20, 0.9);
+  border-radius: 12px;
   overflow: hidden;
+  margin-top: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
-.progress-ai {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--purple), var(--pink));
-  transition: width .8s ease;
-}
-.progress-real {
+
+.timer-bar {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, var(--cyan), var(--green));
-  transition: width .8s ease;
-}
-.data-table {
-  background: #060a14;
   border-radius: 12px;
-  border: 1px solid var(--card-border);
-  padding: 12px;
-  font-size: 12px;
+  transition: width 1s linear;
 }
-.data-row {
+
+/* Turnstile Box */
+.captcha-wrap {
   display: flex;
-  justify-content: space-between;
-  padding: 8px 6px;
-  border-bottom: 1px solid #141f33;
+  justify-content: center;
+  margin-bottom: 15px;
 }
-.data-row:last-child { border-bottom: 0; }
-.data-row span:first-child { color: var(--muted); }
-.data-row span:last-child { font-weight: 700; font-family: ui-monospace, Consolas, monospace; }
 
 footer {
   text-align: center;
-  margin-top: 50px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
-  border-top: 1px solid var(--card-border);
-  padding-top: 25px;
 }
-footer a { color: var(--cyan); text-decoration: none; font-weight: 700; }
-@media(max-width: 768px) {
-  .grid { grid-template-columns: 1fr; }
+
+footer a {
+  color: var(--cyan);
+  text-decoration: none;
+  font-weight: 800;
 }
 </style>
 </head>
 <body>
+
 <div class="shell">
   <header>
-    <a href="#" class="brand">
+    <div class="brand">
       <div class="brand-icon">⚡</div>
-      <div>
-        <div class="brand-title">AI DETECTOR 313</div>
-        <div class="brand-sub">IMAGE SCANNER</div>
-      </div>
-    </a>
-    <a href="https://t.me/abdullah_al_hasib_313" target="_blank" class="tg-btn">
-      <span>✈ Telegram</span>
-      <span>@abdullah_al_hasib_313</span>
-    </a>
-  </header>
-
-  <section class="hero">
-    <div class="badge">NEURAL SCAN ENGINE</div>
-    <h1>Detect AI Images. <span class="gradient-text">Real-time Precision.</span></h1>
-    <p>Check if any image is generated by Midjourney, DALL-E, Stable Diffusion or captured with a real camera.</p>
-  </section>
-
-  <div class="grid">
-    <!-- ইনপুট প্যানেল -->
-    <div class="panel">
-      <h3 style="margin-top:0">Upload or Provide Image</h3>
-      
-      <div class="drop-zone" id="dropZone">
-        <div class="drop-icon">🖼️</div>
-        <div class="drop-text"><b>Tap to select</b> or drag & drop an image here</div>
-        <div style="font-size:10px; color:#556987; margin-top:5px">JPG, PNG, WEBP supported</div>
-        <input type="file" id="fileInput" accept="image/*">
-      </div>
-
-      <div class="preview-card" id="previewCard">
-        <img id="previewImg" class="preview-thumb" src="" alt="Thumbnail">
-        <div class="preview-name" id="previewName"></div>
-      </div>
-
-      <div class="or-divider">OR USE IMAGE URL</div>
-
-      <div class="input-box">
-        <input type="text" id="urlInput" placeholder="https://example.com/photo.jpg">
-        <button class="action-btn" id="analyzeBtn">Scan</button>
+      <div class="brand-text">
+        <h2>TIKTOK BOOSTER</h2>
+        <span>ZEFAME CORE ENGINE</span>
       </div>
     </div>
+    <a href="https://t.me/abdullah_al_hasib_313" target="_blank" class="tg-btn">Telegram</a>
+  </header>
 
-    <!-- রেজাল্ট প্যানেল -->
-    <div class="panel">
-      <h3 style="margin-top:0">Scan Verdict</h3>
+  <div class="hero">
+    <div class="badge">10 FREE LIKES · 30 MIN</div>
+    <h1>Boost Video. <span class="gradient">Instant Delivery.</span></h1>
+  </div>
 
-      <div class="res-empty" id="resEmpty">
-        <div style="font-size:42px;margin-bottom:10px">🔬</div>
-        <div>No image scanned yet</div>
-        <div style="font-size:11px;color:#556987;margin-top:4px">Upload a file or enter a link to inspect</div>
-      </div>
+  <div class="main-card" id="formCard">
+    <div class="field">
+      <label>TIKTOK VIDEO URL</label>
+      <input type="text" id="linkInput" placeholder="https://vt.tiktok.com/ZSgLGTuCJ/">
+    </div>
 
-      <div class="res-loader" id="resLoader">
-        <div class="spinner"></div>
-        <b style="color:var(--cyan)">Analyzing Neural Patterns...</b>
-        <div style="font-size:12px;color:var(--muted);margin-top:6px">Scanning pixel artifacts and textures</div>
-      </div>
+    <div class="captcha-wrap">
+      <!-- Zefame Cloudflare Turnstile Key -->
+      <div class="cf-turnstile" data-sitekey="0x4AAAAAAABcK-wG5qC4Gz8q" data-callback="onCaptchaSuccess"></div>
+    </div>
 
-      <div class="res-content" id="resContent">
-        <div class="verdict-banner" id="verdictBanner">REAL CAMERA</div>
+    <button class="btn-submit" id="submitBtn">▶ SUBMIT ORDER</button>
+  </div>
 
-        <div class="meter-row">
-          <div class="meter-label">
-            <span>AI Probability</span>
-            <span id="aiScore" style="color:var(--pink)">0%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-ai" id="aiBar"></div>
-          </div>
-        </div>
+  <!-- Live Countdown Timer UI -->
+  <div class="timer-card" id="timerCard">
+    <h3 style="font-size:15px; margin-bottom:4px;">Order In Progress</h3>
+    <p style="font-size:11px; color:var(--muted); margin-bottom:15px;">Please wait for the countdown to complete</p>
+    
+    <div class="timer-circle" id="timeDisplay">00:60</div>
 
-        <div class="meter-row">
-          <div class="meter-label">
-            <span>Human / Real Camera</span>
-            <span id="realScore" style="color:var(--green)">0%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-real" id="realBar"></div>
-          </div>
-        </div>
-
-        <div class="data-table">
-          <div class="data-row">
-            <span>Verdict Status</span>
-            <span id="txtVerdict">—</span>
-          </div>
-          <div class="data-row">
-            <span>Scan Reference</span>
-            <span id="refId">—</span>
-          </div>
-          <div class="data-row">
-            <span>Metadata</span>
-            <span id="metaText">—</span>
-          </div>
-        </div>
-      </div>
+    <div class="timer-progress">
+      <div class="timer-bar" id="timerBar"></div>
     </div>
   </div>
 
   <footer>
-    Developed by <a href="https://t.me/abdullah_al_hasib_313" target="_blank">@abdullah_al_hasib_313</a> · All rights reserved.
+    Crafted by <a href="https://t.me/abdullah_al_hasib_313" target="_blank">@abdullah_al_hasib_313</a>
   </footer>
 </div>
 
 <script>
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-const previewCard = document.getElementById('previewCard');
-const previewImg = document.getElementById('previewImg');
-const previewName = document.getElementById('previewName');
-const urlInput = document.getElementById('urlInput');
-const analyzeBtn = document.getElementById('analyzeBtn');
+let captchaToken = "";
+let deviceUuid = crypto.randomUUID();
 
-const resEmpty = document.getElementById('resEmpty');
-const resLoader = document.getElementById('resLoader');
-const resContent = document.getElementById('resContent');
-
-const verdictBanner = document.getElementById('verdictBanner');
-const aiScore = document.getElementById('aiScore');
-const realScore = document.getElementById('realScore');
-const aiBar = document.getElementById('aiBar');
-const realBar = document.getElementById('realBar');
-const txtVerdict = document.getElementById('txtVerdict');
-const refId = document.getElementById('refId');
-const metaText = document.getElementById('metaText');
-
-let selectedFile = null;
-
-dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', (e) => {
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
-  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-});
-
-fileInput.addEventListener('change', () => {
-  if (fileInput.files.length) handleFile(fileInput.files[0]);
-});
-
-function handleFile(file) {
-  selectedFile = file;
-  urlInput.value = '';
-  previewName.textContent = file.name;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    previewImg.src = e.target.result;
-    previewCard.style.display = 'flex';
-  };
-  reader.readAsDataURL(file);
+function onCaptchaSuccess(token) {
+  captchaToken = token;
 }
 
-analyzeBtn.addEventListener('click', async () => {
-  const urlVal = urlInput.value.trim();
-  if (!selectedFile && !urlVal) {
-    alert("একটি ছবি সিলেক্ট করুন অথবা ছবির লিঙ্ক দিন!");
+const linkInput = document.getElementById('linkInput');
+const submitBtn = document.getElementById('submitBtn');
+const formCard = document.getElementById('formCard');
+const timerCard = document.getElementById('timerCard');
+const timeDisplay = document.getElementById('timeDisplay');
+const timerBar = document.getElementById('timerBar');
+
+submitBtn.addEventListener('click', async () => {
+  const link = linkInput.value.trim();
+  if (!link) {
+    alert("ভিডিও লিঙ্ক প্রবেশ করান!");
     return;
   }
 
-  resEmpty.style.display = 'none';
-  resContent.style.display = 'none';
-  resLoader.style.display = 'block';
-
-  const formData = new FormData();
-  if (selectedFile) {
-    formData.append('image', selectedFile);
-  } else {
-    formData.append('url', urlVal);
-  }
+  submitBtn.disabled = true;
+  submitBtn.textContent = "VERIFYING LINK...";
 
   try {
-    // সিক্রেট PHP ব্যাকএন্ডে রিকোয়েস্ট
-    const res = await fetch('/detect', { method: 'POST', body: formData });
-    const data = await res.json();
-    resLoader.style.display = 'none';
+    // ধাপ ১: Video ID সংগ্রহ
+    const checkForm = new FormData();
+    checkForm.append('action', 'checkVideoId');
+    checkForm.append('link', link);
 
-    if (data.status === 'success') {
-      resContent.style.display = 'block';
-      const isAi = data.is_ai;
-      
-      verdictBanner.textContent = data.verdict.toUpperCase();
-      verdictBanner.className = 'verdict-banner ' + (isAi ? 'verdict-ai' : 'verdict-real');
+    const checkRes = await fetch('/api/order', { method: 'POST', body: checkForm });
+    const checkData = await checkRes.json();
 
-      aiScore.textContent = data.ai_percentage + '%';
-      realScore.textContent = data.human_percentage + '%';
-      aiBar.style.width = data.ai_percentage + '%';
-      realBar.style.width = data.human_percentage + '%';
-
-      txtVerdict.textContent = data.verdict;
-      refId.textContent = (data.task_id || '').substring(0, 14) + '...';
-      metaText.textContent = data.meta_info || 'Checked';
-    } else {
-      resEmpty.style.display = 'flex';
-      alert(data.message || 'স্ক্যান ব্যর্থ হয়েছে!');
+    if (!checkData.success || !checkData.data.videoId) {
+      alert("ভিডিও আইডি খুঁজে পাওয়া যায়নি!");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "▶ SUBMIT ORDER";
+      return;
     }
+
+    const videoId = checkData.data.videoId;
+
+    // ধাপ ২: অর্ডার সাবমিট করা
+    submitBtn.textContent = "PROCESSING ORDER...";
+
+    const orderForm = new FormData();
+    orderForm.append('action', 'order');
+    orderForm.append('link', link);
+    orderForm.append('videoId', videoId);
+    orderForm.append('service', '232'); // 10 Free Likes
+    orderForm.append('uuid', deviceUuid);
+    orderForm.append('cf_token', captchaToken);
+
+    const orderRes = await fetch('/api/order', { method: 'POST', body: orderForm });
+    const orderData = await orderRes.json();
+
+    if (orderData.success) {
+      formCard.style.display = 'none';
+      timerCard.style.display = 'block';
+      startTimer(60); // স্ক্রিনশটের মতো ৬০ সেকেন্ড কাউন্টডাউন
+    } else {
+      alert(orderData.message || "অর্ডার সম্পন্ন করা যায়নি!");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "▶ SUBMIT ORDER";
+    }
+
   } catch (err) {
-    resLoader.style.display = 'none';
-    resEmpty.style.display = 'flex';
-    alert("সার্ভারে সমস্যা হয়েছে: " + err.message);
+    alert("রিকোয়েস্টে সমস্যা হয়েছে: " + err.message);
+    submitBtn.disabled = false;
+    submitBtn.textContent = "▶ SUBMIT ORDER";
   }
 });
+
+function startTimer(duration) {
+  let timer = duration;
+  const total = duration;
+
+  const interval = setInterval(() => {
+    let seconds = parseInt(timer % 60, 10);
+    seconds = seconds < 10 ? "0" + seconds : seconds;
+    timeDisplay.textContent = "00:" + seconds;
+
+    const progressPct = ((total - timer) / total) * 100;
+    timerBar.style.width = progressPct + "%";
+
+    if (--timer < 0) {
+      clearInterval(interval);
+      timeDisplay.textContent = "DONE";
+      timerBar.style.width = "100%";
+      setTimeout(() => {
+        alert("অর্ডার সফলভাবে পৌঁছে গেছে!");
+        location.reload();
+      }, 1000);
+    }
+  }, 1000);
+}
 </script>
 </body>
-              </html>
+</html>
