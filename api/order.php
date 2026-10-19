@@ -4,143 +4,157 @@ ini_set('display_errors', 0);
 
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(["success" => false, "message" => "Only POST allowed!"]);
+    echo json_encode(["status" => "error", "message" => "Only POST allowed!"]);
     exit;
 }
 
-$action = trim($_POST['action'] ?? 'order');
-$link = trim($_POST['link'] ?? '');
-$service = trim($_POST['service'] ?? '232'); // 232 = TikTok Likes
-$cfToken = trim($_POST['cf_token'] ?? '');
-$uuid = trim($_POST['uuid'] ?? '');
+$tempFilePath = null;
+$fileName = 'image.jpg';
+$mimeType = 'image/jpeg';
 
-if (empty($link)) {
-    http_response_code(400);
-    echo json_encode(["success" => false, "message" => "Video link is required!"]);
-    exit;
-}
-
-$commonHeaders = [
-    "Host: api.zefame.com",
-    "User-Agent: Mozilla/5.0 (Linux; Android 14; 2409BRN2CY Build/UP1A.231005.007) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.8059.43 Mobile Safari/537.36",
-    "Accept: application/json, text/javascript, */*; q=0.01",
-    "Content-Type: application/x-www-form-urlencoded; charset=UTF-8",
-    "Origin: https://zefame.com",
-    "Referer: https://zefame.com/",
-    "Accept-Language: en-US,en;q=0.9"
-];
-
-// ধাপ ১: Video ID সংগ্রহ করা
-if ($action === 'checkVideoId') {
-    $ch = curl_init("https://api.zefame.com/api_free.php?lang=en");
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => http_build_query([
-            "action" => "checkVideoId",
-            "link"   => $link
-        ]),
-        CURLOPT_HTTPHEADER     => $commonHeaders,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_SSL_VERIFYPEER => false
-    ]);
-
-    $res = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    $json = json_decode($res, true);
-    if ($httpCode === 200 && !empty($json)) {
-        echo json_encode($json);
-    } else {
-        http_response_code(502);
-        echo json_encode(["success" => false, "message" => "Failed to extract Video ID."]);
-    }
-    exit;
-}
-
-// ধাপ ২: অর্ডার প্লেস করা
-if ($action === 'order') {
-    $videoId = trim($_POST['videoId'] ?? '');
-
-    if (empty($videoId)) {
-        // যদি ফ্রন্টএন্ড থেকে না আসে তবে সরাসরি এক্সট্র্যাক্ট করা
-        $chCheck = curl_init("https://api.zefame.com/api_free.php?lang=en");
-        curl_setopt_array($chCheck, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => http_build_query([
-                "action" => "checkVideoId",
-                "link"   => $link
-            ]),
-            CURLOPT_HTTPHEADER     => $commonHeaders,
-            CURLOPT_TIMEOUT        => 12,
-            CURLOPT_SSL_VERIFYPEER => false
-        ]);
-        $checkRes = curl_exec($chCheck);
-        curl_close($chCheck);
-
-        $parsed = json_decode($checkRes, true);
-        $videoId = $parsed['data']['videoId'] ?? '';
-    }
-
-    if (empty($videoId)) {
-        http_response_code(400);
-        echo json_encode(["success" => false, "message" => "Invalid TikTok video ID."]);
-        exit;
-    }
-
-    if (empty($uuid)) {
-        $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
-    }
-
-    $orderPayload = [
-        "service"  => $service,
-        "link"     => $link,
-        "uuid"     => $uuid,
-        "videoId"  => $videoId,
-        "cf_token" => $cfToken
+if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+    $originalName = $_FILES['image']['name'];
+    $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+    $fileName = 'scan_' . time() . '.' . ($ext ?: 'jpg');
+    
+    // Mime type নির্ধারণ (mime_content_type ছাড়া নিরাপদ পদ্ধতি)
+    $mimes = [
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png'  => 'image/png',
+        'webp' => 'image/webp'
     ];
+    $mimeType = $mimes[$ext] ?? ($_FILES['image']['type'] ?: 'image/jpeg');
 
-    $chOrder = curl_init("https://api.zefame.com/api_free.php?action=order&lang=en");
-    curl_setopt_array($chOrder, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => http_build_query($orderPayload),
-        CURLOPT_HTTPHEADER     => $commonHeaders,
-        CURLOPT_TIMEOUT        => 20,
-        CURLOPT_SSL_VERIFYPEER => false
-    ]);
-
-    $orderRes = curl_exec($chOrder);
-    $orderHttpCode = curl_getinfo($chOrder, CURLINFO_HTTP_CODE);
-    curl_close($chOrder);
-
-    $result = json_decode($orderRes, true);
-    if ($orderHttpCode === 200 && !empty($result)) {
-        echo json_encode([
-            "success"   => $result['success'] ?? false,
-            "developer" => "@abdullah_al_hasib_313",
-            "message"   => $result['message'] ?? 'Order process complete',
-            "data"      => $result['data'] ?? null
-        ]);
-    } else {
-        http_response_code(502);
-        echo json_encode([
-            "success" => false,
-            "developer" => "@abdullah_al_hasib_313",
-            "message" => "Zefame server response error"
-        ]);
+    $tempFilePath = sys_get_temp_dir() . '/' . $fileName;
+    if (!move_uploaded_file($_FILES['image']['tmp_name'], $tempFilePath)) {
+        // move_uploaded_file ব্যর্থ হলে কপি চেষ্টা
+        copy($_FILES['image']['tmp_name'], $tempFilePath);
     }
+} else {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "ছবি আপলোড হয়নি বা ফাইলের সাইজ বেশি বড়!"
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+if (!file_exists($tempFilePath) || filesize($tempFilePath) === 0) {
+    http_response_code(400);
+    echo json_encode([
+        "status" => "error",
+        "message" => "টেম্পোরারি ফাইল তৈরি করা সম্ভব হয়নি!"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// ধাপ ১: DeepAI-তে আপলোড
+$cFile = new CURLFile($tempFilePath, $mimeType, $fileName);
+
+$chUpload = curl_init("https://api.deepai.org/ai-image-detector-upload");
+curl_setopt_array($chUpload, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST           => true,
+    CURLOPT_POSTFIELDS     => ["image" => $cFile],
+    CURLOPT_HTTPHEADER     => [
+        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+        "Origin: https://deepai.org",
+        "Referer: https://deepai.org/ai-image-detector",
+        "Accept: */*",
+        "Accept-Language: en-US,en;q=0.9"
+    ],
+    CURLOPT_TIMEOUT        => 25,
+    CURLOPT_SSL_VERIFYPEER => false,
+    CURLOPT_SSL_VERIFYHOST => false
+]);
+
+$uploadRes = curl_exec($chUpload);
+$uploadCode = curl_getinfo($chUpload, CURLINFO_HTTP_CODE);
+$curlErr = curl_error($chUpload);
+curl_close($chUpload);
+
+// কাজ শেষে টেম্পোরারি ফাইল রিমুভ
+if ($tempFilePath && file_exists($tempFilePath)) {
+    @unlink($tempFilePath);
+}
+
+$uploadData = json_decode($uploadRes, true);
+$taskId = $uploadData['id'] ?? null;
+
+if ($uploadCode !== 200 || empty($taskId)) {
+    http_response_code(502);
+    echo json_encode([
+        "status"    => "error",
+        "code"      => $uploadCode,
+        "curl_err"  => $curlErr,
+        "message"   => "DeepAI সার্ভারের সাথে সংযোগ বিচ্ছিন্ন হয়েছে! (HTTP {$uploadCode})"
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+// ধাপ ২: স্ক্যান রেজাল্ট ফেচ করা (Query polling)
+$maxAttempts = 12;
+$finalData = null;
+
+for ($i = 0; $i < $maxAttempts; $i++) {
+    usleep(750000); // ০.৭৫ সেকেন্ড বিরতি
+    $chQuery = curl_init("https://api.deepai.org/ai-image-detector-query");
+    curl_setopt_array($chQuery, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode(["id" => $taskId]),
+        CURLOPT_HTTPHEADER     => [
+            "Content-Type: application/json",
+            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+            "Origin: https://deepai.org",
+            "Referer: https://deepai.org/ai-image-detector"
+        ],
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYHOST => false
+    ]);
+
+    $queryRes = curl_exec($chQuery);
+    curl_close($chQuery);
+
+    $parsed = json_decode($queryRes, true);
+    if ($parsed && ($parsed['status'] ?? '') === 'done') {
+        $finalData = $parsed;
+        break;
+    }
+}
+
+if (!$finalData) {
+    http_response_code(504);
+    echo json_encode([
+        "status" => "error",
+        "message" => "স্ক্যান সম্পন্ন হতে বেশি সময় নিচ্ছে, আবার চেষ্টা করুন!"
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$details = $finalData['result_details'] ?? [];
+$aiPercent = round(floatval($finalData['result'] ?? 0), 2);
+$humanPercent = round(100 - $aiPercent, 2);
+$isAi = (($details['final_result'] ?? '') === 'AI' || $aiPercent > 50);
+
+echo json_encode([
+    "status"           => "success",
+    "developer"        => "@abdullah_al_hasib_313",
+    "verdict"          => $isAi ? "AI Generated" : "Real Camera",
+    "is_ai"            => $isAi,
+    "ai_percentage"    => $aiPercent,
+    "human_percentage" => $humanPercent,
+    "task_id"          => $taskId,
+    "meta_info"        => $details['metadata'][0] ?? "Analysis Done"
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
