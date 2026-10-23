@@ -1,16 +1,23 @@
 {
+  "version": 2,
   "functions": {
-    "api/*.php": {
-      "runtime": "vercel-php@0.7.3"
+    "api/insta.php": {
+      "runtime": "vercel-php@0.9.0",
+      "memory": 512,
+      "maxDuration": 15
     }
   },
   "routes": [
     {
-      "src": "/api/order",
-      "dest": "/api/order.php"
+      "src": "/api/insta",
+      "dest": "/api/insta.php"
     },
     {
-      "src": "/",
+      "src": "/api/insta.php",
+      "dest": "/api/insta.php"
+    },
+    {
+      "src": "/(.*)",
       "dest": "/index.html"
     }
   ]
