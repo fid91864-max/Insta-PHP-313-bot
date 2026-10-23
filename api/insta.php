@@ -28,137 +28,119 @@ if ($username === '' || !preg_match('/^[a-zA-Z0-9._]{1,30}$/', $username)) {
     exit;
 }
 
-$upstreamUrl = 'https://www.instagram.com/' . rawurlencode($username) . '/';
+$profileUrl = 'https://www.instagram.com/' . rawurlencode($username) . '/';
 
-// আপনার টেস্ট করা প্রমাণিত মোবাইল হেডার
-$headers = [
-    'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-    'accept-language: en-GB,en;q=0.9',
-    'dpr: 1',
-    'priority: u=0, i',
-    'sec-ch-prefers-color-scheme: dark',
-    'sec-ch-ua: "Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
-    'sec-ch-ua-mobile: ?1',
-    'sec-ch-ua-model: "Nexus 5"',
-    'sec-ch-ua-platform: "Android"',
-    'sec-ch-ua-platform-version: "6.0"',
-    'sec-fetch-dest: document',
-    'sec-fetch-mode: navigate',
-    'sec-fetch-site: none',
-    'sec-fetch-user: ?1',
-    'upgrade-insecure-requests: 1',
-    'user-agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36',
-    'viewport-width: 1000'
-];
-
-$ch = curl_init();
-curl_setopt_array($ch, [
-    CURLOPT_URL => $upstreamUrl,
-    CURLOPT_HTTPHEADER => $headers,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_FOLLOWLOCATION => true,
-    CURLOPT_MAXREDIRS => 3,
-    CURLOPT_TIMEOUT => 10,
-    CURLOPT_SSL_VERIFYPEER => false,
-    CURLOPT_SSL_VERIFYHOST => false,
-    CURLOPT_ENCODING => ''
-]);
-
-$response = curl_exec($ch);
-$httpStatus = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-if ($httpStatus !== 200 || empty($response)) {
-    http_response_code(502);
-    echo json_encode([
-        'status' => 'error',
-        'developer' => 'Abdullah Al Hasib 313',
-        'message' => 'Failed to reach profile from node.'
-    ]);
-    exit;
-}
-
-$extracted = [
+$data = [
     'username' => $username,
     'full_name' => $username,
     'biography' => 'No public bio broadcasted.',
     'profile_pic_url' => '',
+    'public_url' => $profileUrl,
     'is_verified' => false,
     'is_private' => false,
-    'posts_count' => '0',
-    'followers_count' => '0',
-    'following_count' => '0',
-    'category_name' => 'Public Entity'
+    'posts' => 'Unknown',
+    'followers' => 'Unknown',
+    'following' => 'Unknown',
+    'category' => 'Public Profile'
 ];
 
-// ১. OpenGraph Description থেকে মেট্রিক্স পার্সিং
-if (preg_match('/<meta\s+property=["\']og:description["\']\s+content=["\']([^"\']+)["\']/i', $response, $mDesc) ||
-    preg_match('/<meta\s+name=["\']description["\']\s+content=["\']([^"\']+)["\']/i', $response, $mDesc)) {
-    $desc = html_entity_decode($mDesc[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+$found = false;
+
+// মেথড ১: DuckDuckGo মেটা-সার্চ রিলে (Vercel IP ব্লক হয় না)
+$ddgUrl = 'https://html.duckduckgo.com/html/?q=site:instagram.com/' . urlencode($username);
+$ch = curl_init($ddgUrl);
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_TIMEOUT => 6,
+    CURLOPT_HTTPHEADER => [
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept-Language: en-US,en;q=0.9'
+    ],
+    CURLOPT_SSL_VERIFYPEER => false
+]);
+$ddgRes = curl_exec($ch);
+curl_close($ch);
+
+if (!empty($ddgRes)) {
+    // "XX Followers, YY Following, ZZ Posts" এক্সট্র্যাক্ট করা
+    if (preg_match('/([0-9.,KkMmBb]+)\s*Followers,\s*([0-9.,KkMmBb]+)\s*Following,\s*([0-9.,KkMmBb]+)\s*Posts/is', $ddgRes, $m)) {
+        $data['followers'] = $m[1];
+        $data['following'] = $m[2];
+        $data['posts'] = $m[3];
+        $found = true;
+    }
     
-    // "XX Followers, YY Following, ZZ Posts" ম্যাচিং
-    if (preg_match('/([0-9.,KkMmBb]+)\s*Followers.*?([0-9.,KkMmBb]+)\s*Following.*?([0-9.,KkMmBb]+)\s*Posts/is', $desc, $mStats)) {
-        $extracted['followers_count'] = $mStats[1];
-        $extracted['following_count'] = $mStats[2];
-        $extracted['posts_count'] = $mStats[3];
+    // বায়ো এবং নাম সংগ্রহ
+    if (preg_match('/Instagram photos and videos from ([^(]+)\s*\(@' . preg_quote($username, '/') . '\)[^"]*?"(.*?)"/is', $ddgRes, $m2)) {
+        $data['full_name'] = trim($m2[1]);
+        $data['biography'] = trim($m2[2]);
+        $found = true;
     }
 }
 
-// ২. OpenGraph Image থেকে আসল প্রোফাইল পিকচার পার্সিং
-if (preg_match('/<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']/i', $response, $mImg)) {
-    $extracted['profile_pic_url'] = html_entity_decode($mImg[1]);
-}
+// মেথড ২: অফিশিয়াল Instagram oEmbed API (ক্লাউড আইপিতেও কাজ করে)
+$oembedUrl = 'https://api.instagram.com/oembed/?url=' . urlencode($profileUrl);
+$ch2 = curl_init($oembedUrl);
+curl_setopt_array($ch2, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_TIMEOUT => 5,
+    CURLOPT_HTTPHEADER => [
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    ],
+    CURLOPT_SSL_VERIFYPEER => false
+]);
+$oembedRes = curl_exec($ch2);
+curl_close($ch2);
 
-// ৩. OpenGraph Title থেকে আসল নাম পার্সিং
-if (preg_match('/<meta\s+property=["\']og:title["\']\s+content=["\']([^"\']+)["\']/i', $response, $mTitle)) {
-    $title = html_entity_decode($mTitle[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    if (preg_match('/^(.*?)\s*\(@[a-zA-Z0-9._]+\)/u', $title, $mName)) {
-        $extracted['full_name'] = trim($mName[1]);
+if (!empty($oembedRes)) {
+    $oeData = json_decode($oembedRes, true);
+    if (!empty($oeData['author_name'])) {
+        $data['full_name'] = $oeData['author_name'];
+        $found = true;
+    }
+    if (!empty($oeData['thumbnail_url'])) {
+        $data['profile_pic_url'] = $oeData['thumbnail_url'];
+        $found = true;
     }
 }
 
-// ৪. JSON স্ক্রিপ্ট ট্যাগ থেকে সরাসরি বায়ো ও অন্যান্য ডেটা খোঁজা
-if (preg_match_all('/<script\s+type="application\/json"[^>]*>(.*?)<\/script>/is', $response, $scripts)) {
-    foreach ($scripts[1] as $content) {
-        if (strpos($content, 'biography') !== false || strpos($content, 'user') !== false) {
-            $parsed = json_decode($content, true);
-            if (is_array($parsed)) {
-                array_walk_recursive($parsed, function($val, $key) use (&$extracted) {
-                    if ($key === 'biography' && is_string($val) && !empty($val) && $extracted['biography'] === 'No public bio broadcasted.') {
-                        $extracted['biography'] = $val;
-                    }
-                    if ($key === 'full_name' && is_string($val) && !empty($val) && $extracted['full_name'] === $extracted['username']) {
-                        $extracted['full_name'] = $val;
-                    }
-                    if (($key === 'profile_pic_url_hd' || $key === 'profile_pic_url') && empty($extracted['profile_pic_url']) && is_string($val)) {
-                        $extracted['profile_pic_url'] = $val;
-                    }
-                    if ($key === 'is_verified' && is_bool($val)) {
-                        $extracted['is_verified'] = $val;
-                    }
-                    if ($key === 'is_private' && is_bool($val)) {
-                        $extracted['is_private'] = $val;
-                    }
-                    if ($key === 'edge_followed_by' && is_array($val) && isset($val['count'])) {
-                        $extracted['followers_count'] = number_format((float)$val['count']);
-                    }
-                    if ($key === 'edge_follow' && is_array($val) && isset($val['count'])) {
-                        $extracted['following_count'] = number_format((float)$val['count']);
-                    }
-                    if ($key === 'edge_owner_to_timeline_media' && is_array($val) && isset($val['count'])) {
-                        $extracted['posts_count'] = number_format((float)$val['count']);
-                    }
-                });
+// মেথড ৩: সরাসরি Instagram মেটা-ট্যাগ ট্রাই (ফলব্যাক)
+if (!$found) {
+    $ch3 = curl_init($profileUrl);
+    curl_setopt_array($ch3, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_TIMEOUT => 5,
+        CURLOPT_HTTPHEADER => [
+            'User-Agent: Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+            'Accept-Language: en-US,en;q=0.9'
+        ],
+        CURLOPT_SSL_VERIFYPEER => false
+    ]);
+    $igRes = curl_exec($ch3);
+    curl_close($ch3);
+
+    if (!empty($igRes)) {
+        if (preg_match('/<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']/i', $igRes, $mPic)) {
+            $data['profile_pic_url'] = html_entity_decode($mPic[1]);
+            $found = true;
+        }
+        if (preg_match('/<meta\s+property=["\']og:description["\']\s+content=["\']([^"\']+)["\']/i', $igRes, $mDesc)) {
+            $desc = html_entity_decode($mDesc[1]);
+            if (preg_match('/([0-9.,KkMmBb]+)\s*Followers.*?([0-9.,KkMmBb]+)\s*Following.*?([0-9.,KkMmBb]+)\s*Posts/is', $desc, $mStats)) {
+                $data['followers'] = $mStats[1];
+                $data['following'] = $mStats[2];
+                $data['posts'] = $mStats[3];
+                $found = true;
             }
         }
     }
 }
 
-// বায়ো যদি এখনও ফাঁকা থাকে এবং মেটাতে থাকে
-if ($extracted['biography'] === 'No public bio broadcasted.' && !empty($desc)) {
-    if (preg_match('/Posts\s*-\s*See Instagram photos and videos from .*?:\s*"(.*?)"/is', $desc, $mBio)) {
-        $extracted['biography'] = trim($mBio[1]);
-    }
+// যদি প্রোফাইল পিকচার না পাওয়া যায় তবে লাইট আনব্লকড অ্যাভাটার
+if (empty($data['profile_pic_url'])) {
+    $data['profile_pic_url'] = 'https://unavatar.io/instagram/' . urlencode($username);
 }
 
 http_response_code(200);
@@ -167,18 +149,18 @@ echo json_encode([
     'developer' => 'Abdullah Al Hasib 313',
     'telegram' => '@abdullah_al_hasib_313',
     'data' => [
-        'username' => $extracted['username'],
-        'full_name' => $extracted['full_name'],
-        'biography' => $extracted['biography'],
-        'profile_pic_url' => $extracted['profile_pic_url'],
-        'public_url' => 'https://www.instagram.com/' . rawurlencode($username) . '/',
-        'is_verified' => (bool)$extracted['is_verified'],
-        'is_private' => (bool)$extracted['is_private'],
+        'username' => $data['username'],
+        'full_name' => $data['full_name'],
+        'biography' => $data['biography'],
+        'profile_pic_url' => $data['profile_pic_url'],
+        'public_url' => $data['public_url'],
+        'is_verified' => $data['is_verified'],
+        'is_private' => $data['is_private'],
         'metrics' => [
-            'posts' => $extracted['posts_count'],
-            'followers' => $extracted['followers_count'],
-            'following' => $extracted['following_count']
+            'posts' => $data['posts'],
+            'followers' => $data['followers'],
+            'following' => $data['following']
         ],
-        'category' => $extracted['category_name']
+        'category' => $data['category']
     ]
 ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
