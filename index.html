@@ -14,60 +14,21 @@
                     fontFamily: {
                         orbitron: ['Orbitron', 'sans-serif'],
                         inter: ['Inter', 'sans-serif']
-                    },
-                    colors: {
-                        cyber: {
-                            bg: '#030712',
-                            card: '#0b0f19',
-                            border: '#1e293b',
-                            cyan: '#00f0ff',
-                            violet: '#a855f7',
-                            emerald: '#10b981'
-                        }
                     }
                 }
             }
         }
     </script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #030712;
-            color: #f8fafc;
-            overflow-x: hidden;
-        }
-        .glow-cyan {
-            box-shadow: 0 0 25px rgba(0, 240, 255, 0.2);
-        }
-        .glow-violet {
-            box-shadow: 0 0 25px rgba(168, 85, 247, 0.2);
-        }
-        .glass-panel {
-            background: rgba(11, 15, 25, 0.75);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .grid-bg {
-            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 32px 32px;
-        }
-        @keyframes scan {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(1000%); }
-        }
-        .scanner-beam {
-            animation: scan 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #030712; color: #f8fafc; overflow-x: hidden; }
+        .glow-cyan { box-shadow: 0 0 25px rgba(0, 240, 255, 0.2); }
+        .glass-panel { background: rgba(11, 15, 25, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .grid-bg { background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px); background-size: 32px 32px; }
+        @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(1000%); } }
+        .scanner-beam { animation: scan 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
 </head>
 <body class="grid-bg min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
-
-    <!-- Ambient Glow Lights -->
-    <div class="fixed top-0 left-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
-    <!-- Header Navigation -->
     <header class="glass-panel sticky top-0 z-50 border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center glow-cyan">
@@ -78,64 +39,43 @@
                 <p class="text-[10px] text-gray-400 font-mono tracking-widest uppercase">Cyber Intelligence System v2150</p>
             </div>
         </div>
-        <div class="hidden md:flex items-center gap-6 text-sm font-mono text-gray-400">
-            <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> SYSTEM ONLINE</span>
-            <span>SECURE API: ACTIVE</span>
-        </div>
     </header>
 
-    <!-- Main Content Area -->
     <main class="max-w-4xl mx-auto px-4 py-12 flex-grow w-full">
         <div class="text-center mb-10">
             <span class="px-3 py-1 rounded-full text-xs font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 mb-4 inline-block">🚀 NEXT-GEN INSTAGRAM RECONNAISSANCE</span>
             <h2 class="font-orbitron text-3xl md:text-5xl font-black mb-4 tracking-tight">PUBLIC PROFILE INTELLIGENCE</h2>
-            <p class="text-gray-400 max-w-xl mx-auto text-sm md:text-base">Enter any public Instagram username to instantly scan, retrieve and decrypt authorized public profile metrics in real-time.</p>
         </div>
 
-        <!-- Search Box Form -->
-        <div class="glass-panel p-3 rounded-2xl glow-cyan max-w-2xl mx-auto mb-10 relative">
+        <div class="glass-panel p-3 rounded-2xl glow-cyan max-w-2xl mx-auto mb-10">
             <form id="searchForm" class="flex flex-col sm:flex-row gap-3">
                 <div class="relative flex-grow">
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-cyan-400 font-mono">@</span>
-                    <input type="text" id="usernameInput" required placeholder="Enter Instagram username (e.g. instagram)" class="w-full bg-black/50 border border-white/10 rounded-xl pl-9 pr-4 py-3.5 text-sm focus:outline-none focus:border-cyan-400 font-mono transition">
+                    <input type="text" id="usernameInput" required placeholder="Enter Instagram username" class="w-full bg-black/50 border border-white/10 rounded-xl pl-9 pr-4 py-3.5 text-sm focus:outline-none focus:border-cyan-400 font-mono transition text-white">
                 </div>
-                <button type="submit" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-orbitron font-bold px-8 py-3.5 rounded-xl transition shadow-lg shadow-cyan-500/20 cursor-pointer flex items-center justify-center gap-2">
-                    <span>INITIALIZE SCAN</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
-                </button>
+                <button type="submit" class="bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-orbitron font-bold px-8 py-3.5 rounded-xl transition cursor-pointer">INITIALIZE SCAN</button>
             </form>
         </div>
 
-        <!-- Scanning / Loading State -->
         <div id="loadingState" class="hidden glass-panel p-12 rounded-2xl max-w-2xl mx-auto text-center relative overflow-hidden">
             <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent scanner-beam"></div>
             <div class="w-16 h-16 rounded-full border-2 border-cyan-500/30 border-t-cyan-400 animate-spin mx-auto mb-4"></div>
             <h3 class="font-orbitron font-bold text-cyan-400 tracking-wider mb-2">SCANNING NEURAL DATABASE...</h3>
-            <p class="text-xs font-mono text-gray-400">Accessing authorized public profile stream...</p>
         </div>
 
-        <!-- Error State Alert -->
         <div id="errorState" class="hidden glass-panel p-6 rounded-2xl max-w-2xl mx-auto border-red-500/30 bg-red-950/10 text-center mb-8">
             <p id="errorMessage" class="text-sm font-mono text-red-400"></p>
         </div>
 
-        <!-- Result Card Container -->
-        <div id="resultContainer" class="hidden glass-panel rounded-3xl p-6 md:p-8 max-w-2xl mx-auto border border-white/10 shadow-2xl relative">
+        <div id="resultContainer" class="hidden glass-panel rounded-3xl p-6 md:p-8 max-w-2xl mx-auto border border-white/10 shadow-2xl">
             <div class="flex flex-col md:flex-row items-center gap-6 border-b border-white/10 pb-6 mb-6">
-                <div class="relative">
-                    <img id="resAvatar" src="" alt="Profile Picture" class="w-24 h-24 rounded-2xl object-cover border-2 border-cyan-400/50 glow-cyan">
-                    <div id="resVerifiedBadge" class="hidden absolute -bottom-2 -right-2 bg-cyan-500 text-black p-1 rounded-full text-xs font-bold" title="Verified Account">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
-                    </div>
-                </div>
+                <img id="resAvatar" src="" alt="Avatar" class="w-24 h-24 rounded-2xl object-cover border-2 border-cyan-400/50 glow-cyan">
                 <div class="text-center md:text-left flex-grow">
                     <h3 id="resFullName" class="font-orbitron font-bold text-xl text-white"></h3>
                     <p id="resUsername" class="text-cyan-400 font-mono text-sm mb-2"></p>
                     <span id="resCategory" class="px-2.5 py-1 rounded-md text-xs font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30"></span>
                 </div>
             </div>
-
-            <!-- Stats Grid -->
             <div class="grid grid-cols-3 gap-4 mb-6">
                 <div class="bg-black/40 border border-white/5 rounded-2xl p-4 text-center">
                     <span id="resPosts" class="font-orbitron font-bold text-lg text-white block">0</span>
@@ -150,44 +90,17 @@
                     <span class="text-xs font-mono text-gray-400 uppercase">Following</span>
                 </div>
             </div>
-
-            <!-- Biography Box -->
             <div class="bg-black/40 border border-white/5 rounded-2xl p-4 mb-6">
-                <span class="text-[10px] font-mono text-gray-500 uppercase tracking-widest block mb-1">Biography</span>
-                <p id="resBio" class="text-sm text-gray-300 whitespace-pre-line font-sans"></p>
+                <p id="resBio" class="text-sm text-gray-300 whitespace-pre-line"></p>
             </div>
-
-            <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row gap-3">
-                <a id="resProfileLink" href="#" target="_blank" class="flex-grow bg-cyan-500 hover:bg-cyan-400 text-black font-orbitron font-bold py-3 px-6 rounded-xl text-center text-sm transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2">
-                    <span>OPEN ON INSTAGRAM</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"></path></svg>
-                </a>
-                <button id="copyUrlBtn" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-mono py-3 px-6 rounded-xl text-sm transition flex items-center justify-center gap-2">
-                    <span>COPY URL</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Search History Section -->
-        <div id="historySection" class="hidden max-w-2xl mx-auto mt-8">
-            <div class="flex items-center justify-between mb-3 px-2">
-                <span class="text-xs font-mono text-gray-400 uppercase tracking-wider">Recent Searches</span>
-                <button id="clearHistory" class="text-xs font-mono text-red-400 hover:text-red-300 transition">Clear History</button>
-            </div>
-            <div id="historyList" class="flex flex-wrap gap-2"></div>
+            <a id="resProfileLink" href="#" target="_blank" class="block w-full bg-cyan-500 hover:bg-cyan-400 text-black font-orbitron font-bold py-3 rounded-xl text-center text-sm transition">OPEN ON INSTAGRAM</a>
         </div>
     </main>
 
-    <!-- Footer with Official Developer Credit -->
     <footer class="glass-panel border-t border-white/10 py-6 px-6 text-center mt-12">
-        <p class="font-mono text-xs text-gray-400 mb-1">
-            Developed by <span class="text-cyan-400 font-bold">Abdullah Al Hasib 313</span> | Telegram: <a href="https://t.me/abdullah_al_hasib_313" target="_blank" class="text-purple-400 hover:underline">@abdullah_al_hasib_313</a>
-        </p>
-        <p class="text-[10px] text-gray-600 font-mono">INSTA INFO 313 © 2150. All rights reserved.</p>
+        <p class="font-mono text-xs text-gray-400">Developed by <span class="text-cyan-400 font-bold">Abdullah Al Hasib 313</span> | Telegram: <a href="https://t.me/abdullah_al_hasib_313" class="text-purple-400">@abdullah_al_hasib_313</a></p>
     </footer>
 
-    <!-- Frontend JavaScript -->
     <script>
         const searchForm = document.getElementById('searchForm');
         const usernameInput = document.getElementById('usernameInput');
@@ -195,109 +108,43 @@
         const errorState = document.getElementById('errorState');
         const errorMessage = document.getElementById('errorMessage');
         const resultContainer = document.getElementById('resultContainer');
-        const historySection = document.getElementById('historySection');
-        const historyList = document.getElementById('historyList');
-        const clearHistoryBtn = document.getElementById('clearHistory');
-        const copyUrlBtn = document.getElementById('copyUrlBtn');
-
-        let profileUrlGlobal = '';
 
         searchForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            let username = usernameInput.value.trim().replace(/^@/, '');
+            const username = usernameInput.value.trim().replace(/^@/, '');
             if (!username) return;
 
-            // UI States
             loadingState.classList.remove('hidden');
             errorState.classList.add('hidden');
             resultContainer.classList.add('hidden');
 
             try {
-                const res = await fetch(`api/insta.php?username=${encodeURIComponent(username)}`);
+                const res = await fetch(`api/insta?username=${encodeURIComponent(username)}`);
                 const data = await res.json();
-
                 loadingState.classList.add('hidden');
 
                 if (!res.ok || data.status !== 'success') {
-                    throw new Error(data.message || 'প্রোফাইল তথ্য লোড করতে ব্যর্থ হয়েছে।');
+                    throw new Error(data.message || 'ডাটা লোড করতে ব্যর্থ হয়েছে।');
                 }
 
-                renderProfile(data.profile);
-                saveSearchHistory(username);
+                const p = data.profile;
+                document.getElementById('resAvatar').src = p.profile_pic_url || 'https://via.placeholder.com/150';
+                document.getElementById('resFullName').textContent = p.full_name;
+                document.getElementById('resUsername').textContent = '@' + p.username;
+                document.getElementById('resCategory').textContent = p.category;
+                document.getElementById('resPosts').textContent = p.posts_count;
+                document.getElementById('resFollowers').textContent = p.followers_count;
+                document.getElementById('resFollowing').textContent = p.following_count;
+                document.getElementById('resBio').textContent = p.biography || 'No biography.';
+                document.getElementById('resProfileLink').href = p.profile_url;
+                
+                resultContainer.classList.remove('hidden');
             } catch (err) {
                 loadingState.classList.add('hidden');
-                errorMessage.textContent = err.message || 'সার্ভার সংযোগে ত্রুটি ঘটেছে।';
+                errorMessage.textContent = err.message;
                 errorState.classList.remove('hidden');
             }
         });
-
-        function renderProfile(p) {
-            document.getElementById('resAvatar').src = p.profile_pic_url || 'https://via.placeholder.com/150';
-            document.getElementById('resFullName').textContent = p.full_name || p.username;
-            document.getElementById('resUsername').textContent = '@' + p.username;
-            document.getElementById('resCategory').textContent = p.category;
-            document.getElementById('resPosts').textContent = formatNumber(p.posts_count);
-            document.getElementById('resFollowers').textContent = formatNumber(p.followers_count);
-            document.getElementById('resFollowing').textContent = formatNumber(p.following_count);
-            document.getElementById('resBio').textContent = p.biography || 'No biography available.';
-            
-            const verifiedBadge = document.getElementById('resVerifiedBadge');
-            if (p.is_verified) {
-                verifiedBadge.classList.remove('hidden');
-            } else {
-                verifiedBadge.classList.add('hidden');
-            }
-
-            profileUrlGlobal = p.profile_url;
-            document.getElementById('resProfileLink').href = profileUrlGlobal;
-            resultContainer.classList.remove('hidden');
-        }
-
-        function formatNumber(num) {
-            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-            return num;
-        }
-
-        copyUrlBtn.addEventListener('click', () => {
-            if (profileUrlGlobal) {
-                navigator.clipboard.writeText(profileUrlGlobal);
-                copyUrlBtn.textContent = 'COPIED!';
-                setTimeout(() => { copyUrlBtn.textContent = 'COPY URL'; }, 2000);
-            }
-        });
-
-        function saveSearchHistory(username) {
-            let history = JSON.parse(localStorage.getItem('insta_search_history_313') || '[]');
-            if (!history.includes(username)) {
-                history.unshift(username);
-                if (history.length > 5) history.pop();
-                localStorage.setItem('insta_search_history_313', JSON.stringify(history));
-            }
-            loadSearchHistory();
-        }
-
-        function loadSearchHistory() {
-            let history = JSON.parse(localStorage.getItem('insta_search_history_313') || '[]');
-            if (history.length > 0) {
-                historySection.classList.remove('hidden');
-                historyList.innerHTML = history.map(u => `<button onclick="searchUser('${u}')" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-cyan-400 transition">@${u}</button>`).join('');
-            } else {
-                historySection.classList.add('hidden');
-            }
-        }
-
-        window.searchUser = function(username) {
-            usernameInput.value = username;
-            searchForm.dispatchEvent(new Event('submit'));
-        }
-
-        clearHistoryBtn.addEventListener('click', () => {
-            localStorage.removeItem('insta_search_history_313');
-            loadSearchHistory();
-        });
-
-        loadSearchHistory();
     </script>
 </body>
-</html>
+                </html>
