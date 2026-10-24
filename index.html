@@ -1,930 +1,303 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#030712">
-  <title>INSTA INFO 313 // YEAR 2150 SOCIAL INTELLIGENCE</title>
-  <style>
-    :root {
-      --bg-primary: #020408;
-      --bg-panel: rgba(8, 14, 27, 0.75);
-      --border-cyan: #00f0ff;
-      --border-dim: rgba(0, 240, 255, 0.2);
-      --neon-cyan: #00f0ff;
-      --neon-violet: #a855f7;
-      --neon-emerald: #10b981;
-      --neon-crimson: #ff0055;
-      --text-white: #f8fafc;
-      --text-muted: #64748b;
-      --font-mono: 'Consolas', 'Courier New', monospace;
-      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background: radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.12), transparent 45%),
-                  radial-gradient(circle at 85% 85%, rgba(0, 240, 255, 0.08), transparent 50%),
-                  var(--bg-primary);
-      color: var(--text-white);
-      font-family: var(--font-sans);
-      min-height: 100vh;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* 2150 Quantum Grid Lattice */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background-image: 
-        linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .wrap {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 1050px;
-      margin: 0 auto;
-      padding: 24px 18px 80px;
-      flex: 1;
-    }
-
-    /* Top Command Header */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg-panel);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-dim);
-      border-radius: 20px;
-      padding: 14px 22px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-      margin-bottom: 30px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .brand-core {
-      width: 44px;
-      height: 44px;
-      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      font-size: 20px;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
-      position: relative;
-    }
-
-    .brand-core::after {
-      content: "";
-      position: absolute;
-      inset: -2px;
-      border-radius: 14px;
-      border: 1px solid var(--neon-cyan);
-      animation: pulseCore 3s infinite;
-    }
-
-    @keyframes pulseCore {
-      0%, 100% { opacity: 0.8; transform: scale(1); }
-      50% { opacity: 0.2; transform: scale(1.1); }
-    }
-
-    .brand-meta h1 {
-      font-size: 16px;
-      font-weight: 900;
-      letter-spacing: 1px;
-    }
-
-    .brand-meta span {
-      font-size: 10px;
-      font-family: var(--font-mono);
-      color: var(--neon-cyan);
-      letter-spacing: 2px;
-    }
-
-    .sys-pill {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(0, 240, 255, 0.08);
-      border: 1px solid var(--border-dim);
-      padding: 6px 14px;
-      border-radius: 30px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--neon-cyan);
-    }
-
-    .sys-pulse {
-      width: 6px;
-      height: 6px;
-      background: var(--neon-emerald);
-      border-radius: 50%;
-      box-shadow: 0 0 10px var(--neon-emerald);
-    }
-
-    /* Hero Scanner Engine */
-    .hero {
-      text-align: center;
-      margin-bottom: 35px;
-    }
-
-    .hero-tag {
-      display: inline-block;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      letter-spacing: 3px;
-      color: var(--neon-cyan);
-      background: rgba(0, 240, 255, 0.08);
-      padding: 6px 16px;
-      border-radius: 30px;
-      border: 1px solid var(--border-dim);
-      margin-bottom: 14px;
-    }
-
-    .hero h2 {
-      font-size: clamp(28px, 6vw, 48px);
-      font-weight: 900;
-      line-height: 1.15;
-      letter-spacing: -1px;
-      margin-bottom: 12px;
-    }
-
-    .glow-cyan {
-      background: linear-gradient(90deg, #fff, var(--neon-cyan), var(--neon-violet));
-      -webkit-background-clip: text;
-      color: transparent;
-    }
-
-    .hero p {
-      color: var(--text-muted);
-      font-size: 14px;
-      max-width: 580px;
-      margin: 0 auto;
-    }
-
-    /* Command Matrix Input */
-    .search-panel {
-      background: var(--bg-panel);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-dim);
-      border-radius: 24px;
-      padding: 10px;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.7);
-      margin-bottom: 25px;
-      position: relative;
-    }
-
-    .search-box {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .input-prefix {
-      padding-left: 18px;
-      font-family: var(--font-mono);
-      color: var(--neon-cyan);
-      font-size: 18px;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: var(--text-white);
-      font-size: 15px;
-      font-family: var(--font-sans);
-      padding: 14px 6px;
-    }
-
-    input[type="text"]::placeholder {
-      color: #334155;
-    }
-
-    .btn-scan {
-      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
-      border: none;
-      color: #020408;
-      font-weight: 900;
-      font-family: var(--font-sans);
-      letter-spacing: 0.5px;
-      font-size: 13px;
-      padding: 14px 28px;
-      border-radius: 18px;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      box-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn-scan:hover {
-      box-shadow: 0 0 35px rgba(0, 240, 255, 0.6);
-      transform: translateY(-1px);
-    }
-
-    .btn-scan:active {
-      transform: scale(0.97);
-    }
-
-    .btn-scan:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    /* Live History Stream */
-    .history-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 8px 6px 14px;
-      margin-bottom: 20px;
-    }
-
-    .history-label {
-      font-size: 10px;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    .history-chip {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--text-muted);
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 11px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: 0.2s;
-    }
-
-    .history-chip:hover {
-      border-color: var(--neon-cyan);
-      color: var(--neon-cyan);
-    }
-
-    .btn-clear-hist {
-      background: transparent;
-      border: none;
-      color: var(--neon-crimson);
-      font-size: 10px;
-      font-family: var(--font-mono);
-      cursor: pointer;
-      margin-left: auto;
-      white-space: nowrap;
-    }
-
-    /* Holographic Scanner Container */
-    .scanner-hub {
-      position: relative;
-      min-height: 400px;
-    }
-
-    /* Radar Scanning Simulation */
-    .scan-loader {
-      display: none;
-      text-align: center;
-      padding: 60px 20px;
-      background: var(--bg-panel);
-      border: 1px solid var(--border-dim);
-      border-radius: 28px;
-    }
-
-    .radar {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      border: 2px dashed var(--border-dim);
-      margin: 0 auto 20px;
-      position: relative;
-      display: grid;
-      place-items: center;
-    }
-
-    .radar::after {
-      content: "";
-      position: absolute;
-      inset: -4px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      border-top-color: var(--neon-cyan);
-      animation: spinRadar 1.5s linear infinite;
-    }
-
-    @keyframes spinRadar {
-      to { transform: rotate(360deg); }
-    }
-
-    .radar-beam {
-      width: 8px;
-      height: 8px;
-      background: var(--neon-cyan);
-      border-radius: 50%;
-      box-shadow: 0 0 15px var(--neon-cyan);
-      animation: pulseRadar 0.8s infinite alternate;
-    }
-
-    @keyframes pulseRadar {
-      from { transform: scale(0.6); opacity: 0.4; }
-      to { transform: scale(1.4); opacity: 1; }
-    }
-
-    /* Empty Standby State */
-    .empty-state {
-      background: var(--bg-panel);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 28px;
-      padding: 60px 20px;
-      text-align: center;
-    }
-
-    .empty-icon {
-      font-size: 42px;
-      margin-bottom: 12px;
-      opacity: 0.6;
-    }
-
-    .empty-state h3 {
-      font-size: 16px;
-      margin-bottom: 6px;
-    }
-
-    .empty-state p {
-      font-size: 12px;
-      color: var(--text-muted);
-      max-width: 380px;
-      margin: 0 auto;
-    }
-
-    /* Holographic Profile Terminal (Year 2150) */
-    .profile-card {
-      display: none;
-      background: var(--bg-panel);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      border: 1px solid var(--border-dim);
-      border-radius: 28px;
-      padding: 28px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.85);
-      animation: revealCard 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes revealCard {
-      from { opacity: 0; transform: translateY(20px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .profile-card::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
-    }
-
-    .profile-top {
-      display: flex;
-      gap: 24px;
-      align-items: center;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
-
-    .avatar-wrapper {
-      position: relative;
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      padding: 3px;
-      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
-      box-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
-      flex-shrink: 0;
-    }
-
-    .avatar-wrapper img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      background: #000;
-      display: block;
-    }
-
-    .verified-mark {
-      position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 22px;
-      height: 22px;
-      background: var(--neon-cyan);
-      color: #000;
-      border-radius: 50%;
-      display: none;
-      place-items: center;
-      font-size: 12px;
-      font-weight: 900;
-      box-shadow: 0 0 10px var(--neon-cyan);
-    }
-
-    .profile-meta {
-      flex: 1;
-      min-width: 220px;
-    }
-
-    .meta-handle {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 4px;
-    }
-
-    .meta-handle h3 {
-      font-size: 22px;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-    }
-
-    .lock-badge {
-      font-size: 10px;
-      font-family: var(--font-mono);
-      padding: 3px 8px;
-      border-radius: 8px;
-      background: rgba(255, 0, 85, 0.15);
-      border: 1px solid var(--neon-crimson);
-      color: var(--neon-crimson);
-    }
-
-    .meta-fullname {
-      font-size: 13px;
-      color: var(--neon-cyan);
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-
-    .meta-cat {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-    }
-
-    .profile-bio {
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px;
-      padding: 16px;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #cbd5e1;
-      margin-bottom: 24px;
-      white-space: pre-line;
-      word-break: break-word;
-    }
-
-    /* Quantum Metrics Array */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .metric-card {
-      background: rgba(6, 10, 20, 0.7);
-      border: 1px solid var(--border-dim);
-      border-radius: 16px;
-      padding: 14px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .metric-card span {
-      display: block;
-      font-size: 10px;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
-      letter-spacing: 1px;
-      margin-bottom: 4px;
-    }
-
-    .metric-card strong {
-      font-size: 18px;
-      font-weight: 900;
-      font-family: var(--font-mono);
-      color: #fff;
-    }
-
-    /* Command Actions */
-    .action-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .btn-act {
-      flex: 1;
-      min-width: 140px;
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid var(--border-dim);
-      color: var(--text-white);
-      padding: 13px;
-      border-radius: 14px;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-    }
-
-    .btn-act:hover {
-      background: rgba(0, 240, 255, 0.1);
-      border-color: var(--neon-cyan);
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
-    }
-
-    .btn-act.primary {
-      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
-      color: #020408;
-      border: none;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
-    }
-
-    /* Modal Terminal */
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(2, 4, 8, 0.85);
-      backdrop-filter: blur(12px);
-      z-index: 1000;
-      padding: 20px;
-      place-items: center;
-    }
-
-    .modal-box {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-cyan);
-      border-radius: 24px;
-      max-width: 520px;
-      width: 100%;
-      padding: 26px;
-      position: relative;
-      box-shadow: 0 0 50px rgba(0, 240, 255, 0.25);
-    }
-
-    .modal-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .modal-close {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 20px;
-      cursor: pointer;
-    }
-
-    .modal-body {
-      font-size: 13px;
-      color: #cbd5e1;
-      line-height: 1.7;
-    }
-
-    /* Toast Notification */
-    .toast {
-      position: fixed;
-      bottom: 25px;
-      left: 50%;
-      transform: translateX(-50%) translateY(50px);
-      background: rgba(8, 14, 27, 0.95);
-      border: 1px solid var(--neon-cyan);
-      color: var(--neon-cyan);
-      padding: 10px 20px;
-      border-radius: 30px;
-      font-size: 12px;
-      font-family: var(--font-mono);
-      opacity: 0;
-      transition: all 0.25s ease;
-      z-index: 2000;
-      pointer-events: none;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
-    }
-
-    .toast.active {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-
-    /* Modern Footer */
-    footer {
-      text-align: center;
-      margin-top: 40px;
-      padding-top: 24px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    footer a {
-      color: var(--neon-cyan);
-      text-decoration: none;
-      font-weight: 800;
-    }
-
-    @media (max-width: 650px) {
-      .wrap { padding: 12px 12px 60px; }
-      header { padding: 12px 14px; margin-bottom: 20px; }
-      .metrics-grid { grid-template-columns: 1fr; }
-      .profile-card { padding: 18px; }
-      .btn-scan { padding: 14px 18px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INSTA INFO 313 — Cyber Intelligence 2150</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            bg: '#030712',
+                            card: '#0b0f19',
+                            border: '#1e293b',
+                            cyan: '#00f0ff',
+                            violet: '#a855f7',
+                            emerald: '#10b981'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .glow-cyan {
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.2);
+        }
+        .glow-violet {
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.2);
+        }
+        .glass-panel {
+            background: rgba(11, 15, 25, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .grid-bg {
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(1000%); }
+        }
+        .scanner-beam {
+            animation: scan 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
 </head>
-<body>
+<body class="grid-bg min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
 
-  <div class="wrap">
-    <!-- Header Command Bar -->
-    <header>
-      <div class="brand">
-        <div class="brand-core">⚡</div>
-        <div class="brand-meta">
-          <h1>INSTA INFO 313</h1>
-          <span>YEAR 2150 INTELLIGENCE</span>
+    <!-- Ambient Glow Lights -->
+    <div class="fixed top-0 left-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Header Navigation -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-white/10 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center glow-cyan">
+                <svg class="w-6 h-6 text-black" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <div>
+                <h1 class="font-orbitron font-extrabold tracking-wider text-lg text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">INSTA INFO 313</h1>
+                <p class="text-[10px] text-gray-400 font-mono tracking-widest uppercase">Cyber Intelligence System v2150</p>
+            </div>
         </div>
-      </div>
-      <div class="sys-pill">
-        <span class="sys-pulse"></span>
-        <span>RELAY ACTIVE</span>
-      </div>
+        <div class="hidden md:flex items-center gap-6 text-sm font-mono text-gray-400">
+            <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> SYSTEM ONLINE</span>
+            <span>SECURE API: ACTIVE</span>
+        </div>
     </header>
 
-    <!-- Visual Scanner Hero -->
-    <section class="hero">
-      <div class="hero-tag">ORBITAL DATA PROBE // V4.8</div>
-      <h2>Deep Public Profile <span class="glow-cyan">Inspection.</span></h2>
-      <p>Decentralized intelligence core querying authenticated social data nodes in real-time.</p>
-    </section>
-
-    <!-- Query Input Component -->
-    <div class="search-panel">
-      <div class="search-box">
-        <span class="input-prefix">@</span>
-        <input type="text" id="targetInput" placeholder="Enter Instagram identifier..." autocomplete="off" spellcheck="false">
-        <button class="btn-scan" id="scanBtn">
-          <span>SCAN NODE</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Telemetry History Bar -->
-    <div class="history-row" id="historyStream">
-      <span class="history-label">QUERY LOG:</span>
-      <div id="chipContainer" style="display:flex; gap:6px;"></div>
-      <button class="btn-clear-hist" id="clearHistBtn">CLEAR</button>
-    </div>
-
-    <!-- Output Scanner Hub -->
-    <div class="scanner-hub">
-      <!-- Radar Loading Animation -->
-      <div class="scan-loader" id="scanLoader">
-        <div class="radar">
-          <div class="radar-beam"></div>
+    <!-- Main Content Area -->
+    <main class="max-w-4xl mx-auto px-4 py-12 flex-grow w-full">
+        <div class="text-center mb-10">
+            <span class="px-3 py-1 rounded-full text-xs font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 mb-4 inline-block">🚀 NEXT-GEN INSTAGRAM RECONNAISSANCE</span>
+            <h2 class="font-orbitron text-3xl md:text-5xl font-black mb-4 tracking-tight">PUBLIC PROFILE INTELLIGENCE</h2>
+            <p class="text-gray-400 max-w-xl mx-auto text-sm md:text-base">Enter any public Instagram username to instantly scan, retrieve and decrypt authorized public profile metrics in real-time.</p>
         </div>
-        <div style="font-family: var(--font-mono); color: var(--neon-cyan); font-size: 13px; font-weight: bold;">
-          PENETRATING DIRECTORY RELAYS...
+
+        <!-- Search Box Form -->
+        <div class="glass-panel p-3 rounded-2xl glow-cyan max-w-2xl mx-auto mb-10 relative">
+            <form id="searchForm" class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-cyan-400 font-mono">@</span>
+                    <input type="text" id="usernameInput" required placeholder="Enter Instagram username (e.g. instagram)" class="w-full bg-black/50 border border-white/10 rounded-xl pl-9 pr-4 py-3.5 text-sm focus:outline-none focus:border-cyan-400 font-mono transition">
+                </div>
+                <button type="submit" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-orbitron font-bold px-8 py-3.5 rounded-xl transition shadow-lg shadow-cyan-500/20 cursor-pointer flex items-center justify-center gap-2">
+                    <span>INITIALIZE SCAN</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                </button>
+            </form>
         </div>
-        <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Querying telemetry metadata nodes</p>
-      </div>
 
-      <!-- Standby Empty State -->
-      <div class="empty-state" id="emptyState">
-        <div class="empty-icon">📡</div>
-        <h3>Scanner on Standby</h3>
-        <p>Enter an Instagram handle above to reconstruct its public profile hierarchy and engagement analytics.</p>
-      </div>
+        <!-- Scanning / Loading State -->
+        <div id="loadingState" class="hidden glass-panel p-12 rounded-2xl max-w-2xl mx-auto text-center relative overflow-hidden">
+            <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent scanner-beam"></div>
+            <div class="w-16 h-16 rounded-full border-2 border-cyan-500/30 border-t-cyan-400 animate-spin mx-auto mb-4"></div>
+            <h3 class="font-orbitron font-bold text-cyan-400 tracking-wider mb-2">SCANNING NEURAL DATABASE...</h3>
+            <p class="text-xs font-mono text-gray-400">Accessing authorized public profile stream...</p>
+        </div>
 
-      <!-- Result Terminal Card -->
-      <div class="profile-card" id="profileCard">
-        <div class="profile-top">
-          <div class="avatar-wrapper">
-            <img id="viewAvatar" src="" alt="Avatar">
-            <div class="verified-mark" id="viewVerified">✓</div>
-          </div>
-          <div class="profile-meta">
-            <div class="meta-handle">
-              <h3 id="viewHandle">@username</h3>
-              <span class="lock-badge" id="viewLock">PRIVATE</span>
+        <!-- Error State Alert -->
+        <div id="errorState" class="hidden glass-panel p-6 rounded-2xl max-w-2xl mx-auto border-red-500/30 bg-red-950/10 text-center mb-8">
+            <p id="errorMessage" class="text-sm font-mono text-red-400"></p>
+        </div>
+
+        <!-- Result Card Container -->
+        <div id="resultContainer" class="hidden glass-panel rounded-3xl p-6 md:p-8 max-w-2xl mx-auto border border-white/10 shadow-2xl relative">
+            <div class="flex flex-col md:flex-row items-center gap-6 border-b border-white/10 pb-6 mb-6">
+                <div class="relative">
+                    <img id="resAvatar" src="" alt="Profile Picture" class="w-24 h-24 rounded-2xl object-cover border-2 border-cyan-400/50 glow-cyan">
+                    <div id="resVerifiedBadge" class="hidden absolute -bottom-2 -right-2 bg-cyan-500 text-black p-1 rounded-full text-xs font-bold" title="Verified Account">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+                    </div>
+                </div>
+                <div class="text-center md:text-left flex-grow">
+                    <h3 id="resFullName" class="font-orbitron font-bold text-xl text-white"></h3>
+                    <p id="resUsername" class="text-cyan-400 font-mono text-sm mb-2"></p>
+                    <span id="resCategory" class="px-2.5 py-1 rounded-md text-xs font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30"></span>
+                </div>
             </div>
-            <div class="meta-fullname" id="viewFullname">—</div>
-            <div class="meta-cat" id="viewCategory">General Entity</div>
-          </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="bg-black/40 border border-white/5 rounded-2xl p-4 text-center">
+                    <span id="resPosts" class="font-orbitron font-bold text-lg text-white block">0</span>
+                    <span class="text-xs font-mono text-gray-400 uppercase">Posts</span>
+                </div>
+                <div class="bg-black/40 border border-white/5 rounded-2xl p-4 text-center">
+                    <span id="resFollowers" class="font-orbitron font-bold text-lg text-cyan-400 block">0</span>
+                    <span class="text-xs font-mono text-gray-400 uppercase">Followers</span>
+                </div>
+                <div class="bg-black/40 border border-white/5 rounded-2xl p-4 text-center">
+                    <span id="resFollowing" class="font-orbitron font-bold text-lg text-purple-400 block">0</span>
+                    <span class="text-xs font-mono text-gray-400 uppercase">Following</span>
+                </div>
+            </div>
+
+            <!-- Biography Box -->
+            <div class="bg-black/40 border border-white/5 rounded-2xl p-4 mb-6">
+                <span class="text-[10px] font-mono text-gray-500 uppercase tracking-widest block mb-1">Biography</span>
+                <p id="resBio" class="text-sm text-gray-300 whitespace-pre-line font-sans"></p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a id="resProfileLink" href="#" target="_blank" class="flex-grow bg-cyan-500 hover:bg-cyan-400 text-black font-orbitron font-bold py-3 px-6 rounded-xl text-center text-sm transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2">
+                    <span>OPEN ON INSTAGRAM</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"></path></svg>
+                </a>
+                <button id="copyUrlBtn" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-mono py-3 px-6 rounded-xl text-sm transition flex items-center justify-center gap-2">
+                    <span>COPY URL</span>
+                </button>
+            </div>
         </div>
 
-        <div class="profile-bio" id="viewBio"></div>
-
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <span>PUBLIC POSTS</span>
-            <strong id="metricPosts">0</strong>
-          </div>
-          <div class="metric-card">
-            <span>SUBSCRIBERS</span>
-            <strong id="metricFollowers">0</strong>
-          </div>
-          <div class="metric-card">
-            <span>SUBSCRIPTIONS</span>
-            <strong id="metricFollowing">0</strong>
-          </div>
+        <!-- Search History Section -->
+        <div id="historySection" class="hidden max-w-2xl mx-auto mt-8">
+            <div class="flex items-center justify-between mb-3 px-2">
+                <span class="text-xs font-mono text-gray-400 uppercase tracking-wider">Recent Searches</span>
+                <button id="clearHistory" class="text-xs font-mono text-red-400 hover:text-red-300 transition">Clear History</button>
+            </div>
+            <div id="historyList" class="flex flex-wrap gap-2"></div>
         </div>
+    </main>
 
-        <div class="action-row">
-          <button class="btn-act" id="btnCopyUser">📋 COPY HANDLE</button>
-          <button class="btn-act" id="btnCopyLink">🔗 COPY URL</button>
-          <a class="btn-act primary" id="btnOpenIg" href="#" target="_blank" rel="noopener noreferrer">↗ OPEN INSTAGRAM</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Footer with Developer Credit -->
-    <footer>
-      <p>Developer: <strong>Abdullah Al Hasib 313</strong> | Telegram: <a href="https://t.me/abdullah_al_hasib_313" target="_blank">@abdullah_al_hasib_313</a></p>
-      <p style="margin-top: 6px; font-size: 10px; color: #475569;">INSTA INFO 313 // YEAR 2150 EDITION</p>
+    <!-- Footer with Official Developer Credit -->
+    <footer class="glass-panel border-t border-white/10 py-6 px-6 text-center mt-12">
+        <p class="font-mono text-xs text-gray-400 mb-1">
+            Developed by <span class="text-cyan-400 font-bold">Abdullah Al Hasib 313</span> | Telegram: <a href="https://t.me/abdullah_al_hasib_313" target="_blank" class="text-purple-400 hover:underline">@abdullah_al_hasib_313</a>
+        </p>
+        <p class="text-[10px] text-gray-600 font-mono">INSTA INFO 313 © 2150. All rights reserved.</p>
     </footer>
-  </div>
 
-  <div class="toast" id="toastMsg">ACTION LOGGED</div>
+    <!-- Frontend JavaScript -->
+    <script>
+        const searchForm = document.getElementById('searchForm');
+        const usernameInput = document.getElementById('usernameInput');
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultContainer = document.getElementById('resultContainer');
+        const historySection = document.getElementById('historySection');
+        const historyList = document.getElementById('historyList');
+        const clearHistoryBtn = document.getElementById('clearHistory');
+        const copyUrlBtn = document.getElementById('copyUrlBtn');
 
-  <script>
-    const $ = id => document.getElementById(id);
-    const targetInput = $('targetInput');
-    const scanBtn = $('scanBtn');
-    const scanLoader = $('scanLoader');
-    const emptyState = $('emptyState');
-    const profileCard = $('profileCard');
-    const toastMsg = $('toastMsg');
-    const chipContainer = $('chipContainer');
+        let profileUrlGlobal = '';
 
-    let currentProfileUrl = '';
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let username = usernameInput.value.trim().replace(/^@/, '');
+            if (!username) return;
 
-    function showToast(text) {
-      toastMsg.textContent = text;
-      toastMsg.classList.add('active');
-      setTimeout(() => toastMsg.classList.remove('active'), 2500);
-    }
+            // UI States
+            loadingState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+            resultContainer.classList.add('hidden');
 
-    function saveHistory(username) {
-      let history = JSON.parse(localStorage.getItem('insta_313_hist') || '[]');
-      history = history.filter(item => item.toLowerCase() !== username.toLowerCase());
-      history.unshift(username);
-      if (history.length > 5) history.pop();
-      localStorage.setItem('insta_313_hist', JSON.stringify(history));
-      renderHistory();
-    }
+            try {
+                const res = await fetch(`api/insta.php?username=${encodeURIComponent(username)}`);
+                const data = await res.json();
 
-    function renderHistory() {
-      const history = JSON.parse(localStorage.getItem('insta_313_hist') || '[]');
-      chipContainer.innerHTML = '';
-      if (history.length === 0) {
-        chipContainer.innerHTML = '<span style="font-size:10px;color:#475569;">No previous queries</span>';
-        return;
-      }
-      history.forEach(user => {
-        const chip = document.createElement('div');
-        chip.className = 'history-chip';
-        chip.textContent = '@' + user;
-        chip.onclick = () => {
-          targetInput.value = user;
-          performScan();
-        };
-        chipContainer.appendChild(chip);
-      });
-    }
+                loadingState.classList.add('hidden');
 
-    $('clearHistBtn').onclick = () => {
-      localStorage.removeItem('insta_313_hist');
-      renderHistory();
-      showToast('AUDIT LOG CLEARED');
-    };
+                if (!res.ok || data.status !== 'success') {
+                    throw new Error(data.message || 'প্রোফাইল তথ্য লোড করতে ব্যর্থ হয়েছে।');
+                }
 
-    targetInput.addEventListener('keypress', e => {
-      if (e.key === 'Enter') performScan();
-    });
+                renderProfile(data.profile);
+                saveSearchHistory(username);
+            } catch (err) {
+                loadingState.classList.add('hidden');
+                errorMessage.textContent = err.message || 'সার্ভার সংযোগে ত্রুটি ঘটেছে।';
+                errorState.classList.remove('hidden');
+            }
+        });
 
-    scanBtn.addEventListener('click', performScan);
+        function renderProfile(p) {
+            document.getElementById('resAvatar').src = p.profile_pic_url || 'https://via.placeholder.com/150';
+            document.getElementById('resFullName').textContent = p.full_name || p.username;
+            document.getElementById('resUsername').textContent = '@' + p.username;
+            document.getElementById('resCategory').textContent = p.category;
+            document.getElementById('resPosts').textContent = formatNumber(p.posts_count);
+            document.getElementById('resFollowers').textContent = formatNumber(p.followers_count);
+            document.getElementById('resFollowing').textContent = formatNumber(p.following_count);
+            document.getElementById('resBio').textContent = p.biography || 'No biography available.';
+            
+            const verifiedBadge = document.getElementById('resVerifiedBadge');
+            if (p.is_verified) {
+                verifiedBadge.classList.remove('hidden');
+            } else {
+                verifiedBadge.classList.add('hidden');
+            }
 
-    async function performScan() {
-      const query = targetInput.value.trim().replace('@', '');
-      if (!query) {
-        showToast('ENTER VALID IDENTIFIER');
-        targetInput.focus();
-        return;
-      }
-
-      emptyState.style.display = 'none';
-      profileCard.style.display = 'none';
-      scanLoader.style.display = 'block';
-      scanBtn.disabled = true;
-
-      try {
-        const res = await fetch(`/api/insta.php?username=${encodeURIComponent(query)}`);
-        const data = await res.json();
-
-        scanLoader.style.display = 'none';
-        scanBtn.disabled = false;
-
-        if (data.status === 'success' && data.data) {
-          saveHistory(query);
-          const p = data.data;
-
-          currentProfileUrl = p.public_url;
-          $('viewHandle').textContent = '@' + p.username;
-          $('viewFullname').textContent = p.full_name || p.username;
-          $('viewBio').textContent = p.biography || 'No transmission data broadcasted.';
-          $('viewCategory').textContent = p.category || 'Public Node';
-          $('viewAvatar').src = p.profile_pic_url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="%231e293b"><rect width="100%" height="100%"/></svg>';
-
-          $('metricPosts').textContent = p.metrics.posts;
-          $('metricFollowers').textContent = p.metrics.followers;
-          $('metricFollowing').textContent = p.metrics.following;
-
-          $('viewVerified').style.display = p.is_verified ? 'grid' : 'none';
-          $('viewLock').style.display = p.is_private ? 'inline-block' : 'none';
-          $('btnOpenIg').href = p.public_url;
-
-          profileCard.style.display = 'block';
-          showToast('METRICS RETRIEVED');
-        } else {
-          emptyState.style.display = 'block';
-          $('emptyState').innerHTML = `
-            <div class="empty-icon">⚠️</div>
-            <h3 style="color:var(--neon-crimson)">Node Access Denied</h3>
-            <p>${data.message || 'Target entity is shielded or rate-limited by Instagram directory.'}</p>
-          `;
-          showToast('PROBE RESTRICTED');
+            profileUrlGlobal = p.profile_url;
+            document.getElementById('resProfileLink').href = profileUrlGlobal;
+            resultContainer.classList.remove('hidden');
         }
-      } catch (err) {
-        scanLoader.style.display = 'none';
-        scanBtn.disabled = false;
-        emptyState.style.display = 'block';
-        $('emptyState').innerHTML = `
-          <div class="empty-icon">⚡</div>
-          <h3 style="color:var(--neon-crimson)">System Desynchronization</h3>
-          <p>Failed to establish connection with api/insta.php serverless function.</p>
-        `;
-        showToast('CONNECTION FAILURE');
-      }
-    }
 
-    $('btnCopyUser').onclick = () => {
-      const user = $('viewHandle').textContent;
-      navigator.clipboard.writeText(user);
-      showToast('HANDLE COPIED TO CLIPBOARD');
-    };
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num;
+        }
 
-    $('btnCopyLink').onclick = () => {
-      if (currentProfileUrl) {
-        navigator.clipboard.writeText(currentProfileUrl);
-        showToast('PROFILE URL COPIED');
-      }
-    };
+        copyUrlBtn.addEventListener('click', () => {
+            if (profileUrlGlobal) {
+                navigator.clipboard.writeText(profileUrlGlobal);
+                copyUrlBtn.textContent = 'COPIED!';
+                setTimeout(() => { copyUrlBtn.textContent = 'COPY URL'; }, 2000);
+            }
+        });
 
-    renderHistory();
-  </script>
+        function saveSearchHistory(username) {
+            let history = JSON.parse(localStorage.getItem('insta_search_history_313') || '[]');
+            if (!history.includes(username)) {
+                history.unshift(username);
+                if (history.length > 5) history.pop();
+                localStorage.setItem('insta_search_history_313', JSON.stringify(history));
+            }
+            loadSearchHistory();
+        }
+
+        function loadSearchHistory() {
+            let history = JSON.parse(localStorage.getItem('insta_search_history_313') || '[]');
+            if (history.length > 0) {
+                historySection.classList.remove('hidden');
+                historyList.innerHTML = history.map(u => `<button onclick="searchUser('${u}')" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-cyan-400 transition">@${u}</button>`).join('');
+            } else {
+                historySection.classList.add('hidden');
+            }
+        }
+
+        window.searchUser = function(username) {
+            usernameInput.value = username;
+            searchForm.dispatchEvent(new Event('submit'));
+        }
+
+        clearHistoryBtn.addEventListener('click', () => {
+            localStorage.removeItem('insta_search_history_313');
+            loadSearchHistory();
+        });
+
+        loadSearchHistory();
+    </script>
 </body>
 </html>
