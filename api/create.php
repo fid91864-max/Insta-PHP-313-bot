@@ -53,30 +53,37 @@ curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 curl_setopt($ch, CURLOPT_TIMEOUT, 20);
 $html = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-if (!$html || $httpCode !== 200) {
-    http_response_code(502);
-    echo json_encode([
-        "error" => "Failed to reach Priyo Mail from Vercel.",
-        "http_code" => $httpCode,
-        "remote_preview" => substr(strip_tags((string)$html), 0, 200)
-    ]);
-    exit();
+// কুকি ডেটা পড়া
+$cookieData = file_get_contents($cookieJar);
+$xsrfToken = null;
+if (preg_match('/XSRF-TOKEN\s+([^\s\r\n]+)/', $cookieData, $m)) {
+    $xsrfToken = urldecode($m[1]);
 }
 
-// CSRF Token সংগ্রহ
+// CSRF Token খোঁজার মাল্টিপল মেথড
 $csrfToken = null;
+
+// মেথড ক: <meta name="csrf-token" content="...">
 if (preg_match('/name=["\']csrf-token["\']\s+content=["\']([^"\']+)["\']/i', $html, $m)) {
     $csrfToken = $m[1];
-} elseif (preg_match('/csrfToken["\']?\s*:\s*["\']([^"\']+)["\']/i', $html, $m)) {
+} 
+// মেথড খ: <input type="hidden" name="_token" value="...">
+elseif (preg_match('/name=["\']_token["\']\s+value=["\']([^"\']+)["\']/i', $html, $m)) {
     $csrfToken = $m[1];
+}
+// মেথড গ: JS কনফিগে "csrf": "..." বা "token": "..."
+elseif (preg_match('/(?:csrfToken|_token|csrf)["\']?\s*[:=]\s*["\']([a-zA-Z0-9]{40,})["\']/i', $html, $m)) {
+    $csrfToken = $m[1];
+}
+// মেথড ঘ: যদি HTML-এ না থাকে, XSRF-TOKEN কুকি নিজেই টোকেন হিসেবে ব্যবহৃত হয়
+elseif ($xsrfToken) {
+    $csrfToken = $xsrfToken;
 }
 
 // Livewire Component Snapshot সংগ্রহ
 $snapshot = null;
-// ফ্লেক্সিবল ম্যাচিং (আগে wire:snapshot থাকলে অথবা পরে থাকলে)
 if (preg_match('/themes\.components\.change-account[^>]*wire:snapshot=["\']([^"\']+)["\']/i', $html, $m)) {
     $snapshot = html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
 } elseif (preg_match('/wire:snapshot=["\']([^"\']+)["\'][^>]*themes\.components\.change-account/i', $html, $m)) {
@@ -88,18 +95,9 @@ if (!$snapshot || !$csrfToken) {
     echo json_encode([
         "error" => "Failed to extract session metadata.",
         "found_csrf" => (bool)$csrfToken,
-        "found_snapshot" => (bool)$snapshot,
-        "page_title" => (preg_match('/<title>(.*?)<\/title>/is', $html, $tm)) ? trim($tm[1]) : "No Title",
-        "remote_preview" => substr(strip_tags($html), 0, 300)
+        "found_snapshot" => (bool)$snapshot
     ]);
     exit();
-}
-
-// কুকি থেকে XSRF-TOKEN পড়া
-$cookieData = file_get_contents($cookieJar);
-$xsrfToken = null;
-if (preg_match('/XSRF-TOKEN\s+([^\s\r\n]+)/', $cookieData, $m)) {
-    $xsrfToken = urldecode($m[1]);
 }
 
 // ২. Change Email Address কল করা
@@ -150,7 +148,7 @@ curl_close($ch);
 $finalCookies = file_get_contents($cookieJar);
 @unlink($cookieJar);
 
-// স্টেট সংরক্ষণ প্যাকেজ
+// স্টেট সংরক্ষণ প্যাকেজ (Base64 Token)
 $sessionPackage = [
     "cookies" => $finalCookies,
     "csrf_token" => $csrfToken,
