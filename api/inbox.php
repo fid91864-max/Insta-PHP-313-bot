@@ -33,6 +33,7 @@ $baseUrl = "https://priyo.email";
 $cookieJar = tempnam(sys_get_temp_dir(), 'cookie_inbox_');
 file_put_contents($cookieJar, $decodedData['cookies']);
 $csrfToken = $decodedData['csrf_token'] ?? null;
+$userEmail = $decodedData['email'] ?? '';
 
 $browserHeaders = [
     "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -47,22 +48,19 @@ $browserHeaders = [
     "Upgrade-Insecure-Requests: 1"
 ];
 
-// ১. পেজ লোড করে লাইভওয়্যার ইনবক্স স্ন্যাপশট সংগ্রহ করা
+// 1. Initial Page Load (Inbox component fetch kora)
 $ch = curl_init($baseUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieJar);
 curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieJar);
 curl_setopt($ch, CURLOPT_HTTPHEADER, $browserHeaders);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_TIMEOUT, 20);
 $html = curl_exec($ch);
 curl_close($ch);
 
 $inboxSnapshot = null;
-
-// ফ্লেক্সিবল Regex ম্যাচিং (আগে বা পরে wire:snapshot যেখানেই থাকুক)
 if (preg_match('/themes\.components\.inbox-message[^>]*wire:snapshot=["\']([^"\']+)["\']/i', $html, $m)) {
     $inboxSnapshot = html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
 } elseif (preg_match('/wire:snapshot=["\']([^"\']+)["\'][^>]*themes\.components\.inbox-message/i', $html, $m)) {
@@ -72,26 +70,32 @@ if (preg_match('/themes\.components\.inbox-message[^>]*wire:snapshot=["\']([^"\'
 if (!$inboxSnapshot) {
     @unlink($cookieJar);
     http_response_code(500);
-    echo json_encode([
-        "error" => "Failed to load inbox component.",
-        "page_title" => (preg_match('/<title>(.*?)<\/title>/is', $html, $tm)) ? trim($tm[1]) : "No Title",
-        "remote_preview" => substr(strip_tags((string)$html), 0, 200)
-    ]);
+    echo json_encode(["error" => "Failed to load inbox component."]);
     exit();
 }
 
-// কুকি থেকে XSRF-TOKEN পড়া
 $cookieData = file_get_contents($cookieJar);
 $xsrfToken = null;
 if (preg_match('/XSRF-TOKEN\s+([^\s\r\n]+)/', $cookieData, $m)) {
     $xsrfToken = urldecode($m[1]);
 }
-
 if (!$csrfToken && $xsrfToken) {
     $csrfToken = $xsrfToken;
 }
 
-// ২. Messages ফেচ করা
+$postHeaders = [
+    "Content-Type: application/json",
+    "Origin: {$baseUrl}",
+    "Referer: {$baseUrl}/",
+    "X-Livewire: 1",
+    "X-Requested-With: XMLHttpRequest",
+    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36"
+];
+
+if ($xsrfToken) $postHeaders[] = "X-XSRF-TOKEN: {$xsrfToken}";
+if ($csrfToken) $postHeaders[] = "X-CSRF-TOKEN: {$csrfToken}";
+
+// 2. syncEmail + fetchMessages Dispatch
 $payload = [
     "_token" => $csrfToken,
     "components" => [
@@ -101,6 +105,11 @@ $payload = [
             "calls" => [
                 [
                     "method" => "__dispatch",
+                    "params" => ["syncEmail", ["email" => $userEmail]],
+                    "metadata" => []
+                ],
+                [
+                    "method" => "__dispatch",
                     "params" => ["fetchMessages", (object)[]],
                     "metadata" => []
                 ]
@@ -108,22 +117,6 @@ $payload = [
         ]
     ]
 ];
-
-$postHeaders = [
-    "Content-Type: application/json",
-    "Origin: {$baseUrl}",
-    "Referer: {$baseUrl}/",
-    "X-Livewire: 1",
-    "X-Requested-With: XMLHttpRequest",
-    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-];
-
-if ($xsrfToken) {
-    $postHeaders[] = "X-XSRF-TOKEN: {$xsrfToken}";
-}
-if ($csrfToken) {
-    $postHeaders[] = "X-CSRF-TOKEN: {$csrfToken}";
-}
 
 $ch = curl_init("{$baseUrl}/livewire/update");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -136,29 +129,69 @@ curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_TIMEOUT, 20);
 $resp = curl_exec($ch);
 curl_close($ch);
-@unlink($cookieJar);
 
 $messages = [];
 $resJson = json_decode((string)$resp, true);
 
 if (isset($resJson['components'][0]['snapshot'])) {
-    $snapData = json_decode($resJson['components'][0]['snapshot'], true);
+    $latestSnapshot = $resJson['components'][0]['snapshot'];
+    $snapData = json_decode($latestSnapshot, true);
     $rawMsgs = $snapData['data']['messages'] ?? [];
     
-    // Priyo Mail এর নেস্টেড অ্যারে থেকে মেসেজ পার্স করা
     if (!empty($rawMsgs) && is_array($rawMsgs) && isset($rawMsgs[0])) {
         $firstTier = $rawMsgs[0];
         if (is_array($firstTier) && isset($firstTier[0])) {
             foreach ($firstTier[0] as $item) {
                 if (is_array($item) && isset($item['id'])) {
+                    $msgId = $item['id'];
+                    $content = $item['content'] ?? '';
+
+                    // Jodi content khali thake ba HTML theke pura message na ashe, updateView call kora
+                    if (empty($content) || strlen($content) < 5) {
+                        $viewPayload = [
+                            "_token" => $csrfToken,
+                            "components" => [
+                                [
+                                    "snapshot" => $latestSnapshot,
+                                    "updates" => (object)[],
+                                    "calls" => [
+                                        [
+                                            "method" => "updateView",
+                                            "params" => [$msgId],
+                                            "metadata" => []
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ];
+
+                        $chView = curl_init("{$baseUrl}/livewire/update");
+                        curl_setopt($chView, CURLOPT_RETURNTRANSFER, true);
+                        curl_setopt($chView, CURLOPT_POST, true);
+                        curl_setopt($chView, CURLOPT_POSTFIELDS, json_encode($viewPayload));
+                        curl_setopt($chView, CURLOPT_HTTPHEADER, $postHeaders);
+                        curl_setopt($chView, CURLOPT_COOKIEJAR, $cookieJar);
+                        curl_setopt($chView, CURLOPT_COOKIEFILE, $cookieJar);
+                        curl_setopt($chView, CURLOPT_SSL_VERIFYPEER, false);
+                        curl_setopt($chView, CURLOPT_TIMEOUT, 15);
+                        $viewResp = curl_exec($chView);
+                        curl_close($chView);
+
+                        $viewJson = json_decode((string)$viewResp, true);
+                        $viewHtml = $viewJson['components'][0]['effects']['html'] ?? '';
+                        if (preg_match('/<textarea[^>]*id=["\']content-[0-9]+["\'][^>]*>(.*?)<\/textarea>/is', $viewHtml, $tm)) {
+                            $content = trim(html_entity_decode($tm[1], ENT_QUOTES, 'UTF-8'));
+                        }
+                    }
+
                     $messages[] = [
-                        "id" => $item['id'],
+                        "id" => $msgId,
                         "sender_name" => $item['sender_name'] ?? '',
                         "sender_email" => $item['sender_email'] ?? '',
                         "subject" => $item['subject'] ?? '',
                         "date" => $item['date'] ?? '',
                         "datediff" => $item['datediff'] ?? '',
-                        "content" => $item['content'] ?? ''
+                        "content" => $content
                     ];
                 }
             }
@@ -166,9 +199,11 @@ if (isset($resJson['components'][0]['snapshot'])) {
     }
 }
 
+@unlink($cookieJar);
+
 echo json_encode([
     "success" => true,
-    "email" => $decodedData['email'] ?? '',
+    "email" => $userEmail,
     "count" => count($messages),
     "messages" => $messages
-], JSON_UNESCAPED_SLASHES);
+], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
