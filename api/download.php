@@ -3,11 +3,6 @@ header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
 $url = $_GET['url'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -36,12 +31,12 @@ function fetchCurl($endpoint, $postData = null, $headers = []) {
     curl_setopt($ch, CURLOPT_URL, $endpoint);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
     $defaultHeaders = [
         'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept: application/json, text/plain, */*'
+        'Accept: */*'
     ];
 
     curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($defaultHeaders, $headers));
@@ -56,7 +51,7 @@ function fetchCurl($endpoint, $postData = null, $headers = []) {
     return $response;
 }
 
-// ১. TikTok Handler (TikWM Engine)
+// ১. TikTok Handler
 if (strpos($url, 'tiktok.com') !== false) {
     $tikUrl = 'https://www.tikwm.com/api/?url=' . urlencode($url);
     $res = json_decode(fetchCurl($tikUrl), true);
@@ -97,96 +92,78 @@ if (strpos($url, 'instagram.com') !== false) {
     }
 }
 
-// ৩. YouTube Handler (Multiple Cobalt & Converter Instances)
+// ৩. YouTube Handler
 if (strpos($url, 'youtu.be') !== false || strpos($url, 'youtube.com') !== false) {
     preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/\s]{11})%i', $url, $match);
     $videoId = $match[1] ?? null;
 
-    // মেথড A: Cobalt API ক্লাস্টার
-    $cobaltNodes = [
-        'https://cobalt.kwiatekm.tokyo/api/json',
-        'https://api.cobalt.tools/api/json',
-        'https://co.wuk.sh/api/json'
-    ];
-
-    foreach ($cobaltNodes as $node) {
-        $payload = json_encode([
-            'url' => $url,
-            'vQuality' => '720',
-            'isAudioOnly' => false
+    if ($videoId) {
+        $postData = json_encode([
+            'videoId' => $videoId,
+            'context' => [
+                'client' => [
+                    'clientName' => 'ANDROID',
+                    'clientVersion' => '19.09.37'
+                ]
+            ]
         ]);
 
-        $res = json_decode(fetchCurl($node, $payload, [
-            'Content-Type: application/json',
-            'Accept: application/json'
-        ]), true);
+        $res = fetchCurl('https://www.youtube.com/youtubei/v1/player', $postData, ['Content-Type: application/json']);
+        $data = json_decode($res, true);
 
-        if (!empty($res['url'])) {
+        $formats = array_merge(
+            $data['streamingData']['formats'] ?? [],
+            $data['streamingData']['adaptiveFormats'] ?? []
+        );
+
+        $videoUrl = null;
+        $audioUrl = null;
+
+        // অডিওসহ কম্বাইন্ড ভিডিও ফরম্যাট খোঁজা
+        foreach ($formats as $f) {
+            if (!empty($f['url']) && strpos($f['mimeType'] ?? '', 'video/mp4') !== false && !empty($f['audioQuality'])) {
+                $videoUrl = $f['url'];
+                break;
+            }
+        }
+
+        // আলাদা অডিও ট্র্যাক
+        foreach ($formats as $f) {
+            if (!empty($f['url']) && strpos($f['mimeType'] ?? '', 'audio') !== false) {
+                $audioUrl = $f['url'];
+                break;
+            }
+        }
+
+        if ($videoUrl) {
             echo json_encode([
                 'success' => true,
                 'platform' => 'YouTube',
-                'title' => 'YouTube Video',
-                'thumbnail' => $videoId ? "https://i.ytimg.com/vi/{$videoId}/hqdefault.jpg" : null,
-                'video_url' => $res['url'],
-                'audio_url' => null
+                'title' => $data['videoDetails']['title'] ?? 'YouTube Video',
+                'duration' => (int)($data['videoDetails']['lengthSeconds'] ?? 0),
+                'thumbnail' => "https://i.ytimg.com/vi/{$videoId}/hqdefault.jpg",
+                'video_url' => $videoUrl,
+                'audio_url' => $audioUrl
             ]);
             exit;
         }
     }
-
-    // মেথড B: সচল Invidious মিরর
-    if ($videoId) {
-        $invMirrors = [
-            "https://yewtu.be/api/v1/videos/{$videoId}",
-            "https://invidious.asir.dev/api/v1/videos/{$videoId}"
-        ];
-
-        foreach ($invMirrors as $mirror) {
-            $raw = fetchCurl($mirror);
-            $ytData = json_decode($raw, true);
-
-            if (!empty($ytData['formatStreams'])) {
-                $stream = $ytData['formatStreams'][0]['url'] ?? null;
-                if ($stream) {
-                    echo json_encode([
-                        'success' => true,
-                        'platform' => 'YouTube',
-                        'title' => $ytData['title'] ?? 'YouTube Video',
-                        'duration' => (int)($ytData['lengthSeconds'] ?? 0),
-                        'thumbnail' => "https://i.ytimg.com/vi/{$videoId}/hqdefault.jpg",
-                        'video_url' => $stream,
-                        'audio_url' => null
-                    ]);
-                    exit;
-                }
-            }
-        }
-    }
 }
 
-// ৪. সার্বজনীন ফলব্যাক ইঞ্জিন
-$fallbackNodes = [
-    'https://cobalt.kwiatekm.tokyo/api/json',
-    'https://co.wuk.sh/api/json'
-];
+// ৪. সার্বজনীন ফলব্যাক ইঞ্জিন (Facebook ও অন্যান্য সাইটের জন্য)
+$cobaltUrl = 'https://co.wuk.sh/api/json';
+$cobaltData = json_encode(['url' => $url]);
+$res = json_decode(fetchCurl($cobaltUrl, $cobaltData, ['Content-Type: application/json', 'Accept: application/json']), true);
 
-foreach ($fallbackNodes as $node) {
-    $payload = json_encode(['url' => $url]);
-    $res = json_decode(fetchCurl($node, $payload, [
-        'Content-Type: application/json',
-        'Accept: application/json'
-    ]), true);
-
-    if (!empty($res['url'])) {
-        echo json_encode([
-            'success' => true,
-            'platform' => 'Universal',
-            'title' => 'Downloaded Media',
-            'video_url' => $res['url'],
-            'audio_url' => null
-        ]);
-        exit;
-    }
+if (!empty($res['url'])) {
+    echo json_encode([
+        'success' => true,
+        'platform' => 'Universal',
+        'title' => 'Downloaded Media',
+        'video_url' => $res['url'],
+        'audio_url' => null
+    ]);
+    exit;
 }
 
 http_response_code(422);
