@@ -6,8 +6,8 @@
   },
   "routes": [
     {
-      "src": "/api/download",
-      "dest": "/api/download.php"
+      "src": "/api/tgReg",
+      "dest": "/api/tgReg.php"
     }
   ]
 }
