@@ -36,7 +36,7 @@ function fetchCurl($endpoint, $postData = null, $headers = []) {
     curl_setopt($ch, CURLOPT_URL, $endpoint);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 12);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
     $defaultHeaders = [
@@ -56,7 +56,7 @@ function fetchCurl($endpoint, $postData = null, $headers = []) {
     return $response;
 }
 
-// ১. TikTok Handler
+// ১. TikTok Handler (TikWM Engine)
 if (strpos($url, 'tiktok.com') !== false) {
     $tikUrl = 'https://www.tikwm.com/api/?url=' . urlencode($url);
     $res = json_decode(fetchCurl($tikUrl), true);
@@ -97,61 +97,64 @@ if (strpos($url, 'instagram.com') !== false) {
     }
 }
 
-// ৩. YouTube Handler (Invidious / Piped ক্লাস্টার ব্যবহার করে Vercel IP Block বাইপাস)
+// ৩. YouTube Handler (Multiple Cobalt & Converter Instances)
 if (strpos($url, 'youtu.be') !== false || strpos($url, 'youtube.com') !== false) {
     preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/\s]{11})%i', $url, $match);
     $videoId = $match[1] ?? null;
 
+    // মেথড A: Cobalt API ক্লাস্টার
+    $cobaltNodes = [
+        'https://cobalt.kwiatekm.tokyo/api/json',
+        'https://api.cobalt.tools/api/json',
+        'https://co.wuk.sh/api/json'
+    ];
+
+    foreach ($cobaltNodes as $node) {
+        $payload = json_encode([
+            'url' => $url,
+            'vQuality' => '720',
+            'isAudioOnly' => false
+        ]);
+
+        $res = json_decode(fetchCurl($node, $payload, [
+            'Content-Type: application/json',
+            'Accept: application/json'
+        ]), true);
+
+        if (!empty($res['url'])) {
+            echo json_encode([
+                'success' => true,
+                'platform' => 'YouTube',
+                'title' => 'YouTube Video',
+                'thumbnail' => $videoId ? "https://i.ytimg.com/vi/{$videoId}/hqdefault.jpg" : null,
+                'video_url' => $res['url'],
+                'audio_url' => null
+            ]);
+            exit;
+        }
+    }
+
+    // মেথড B: সচল Invidious মিরর
     if ($videoId) {
-        $invidiousInstances = [
-            "https://inv.nadeko.net/api/v1/videos/{$videoId}",
-            "https://invidious.nerdvpn.de/api/v1/videos/{$videoId}",
-            "https://invidious.jing.rocks/api/v1/videos/{$videoId}",
-            "https://pipedapi.kavin.rocks/streams/{$videoId}"
+        $invMirrors = [
+            "https://yewtu.be/api/v1/videos/{$videoId}",
+            "https://invidious.asir.dev/api/v1/videos/{$videoId}"
         ];
 
-        foreach ($invidiousInstances as $instanceUrl) {
-            $raw = fetchCurl($instanceUrl);
+        foreach ($invMirrors as $mirror) {
+            $raw = fetchCurl($mirror);
             $ytData = json_decode($raw, true);
 
-            if (!empty($ytData['formatStreams'])) { // Invidious Response
-                $videoStream = null;
-                foreach ($ytData['formatStreams'] as $s) {
-                    if (!empty($s['url'])) {
-                        $videoStream = $s['url'];
-                        break;
-                    }
-                }
-
-                if ($videoStream) {
+            if (!empty($ytData['formatStreams'])) {
+                $stream = $ytData['formatStreams'][0]['url'] ?? null;
+                if ($stream) {
                     echo json_encode([
                         'success' => true,
                         'platform' => 'YouTube',
                         'title' => $ytData['title'] ?? 'YouTube Video',
                         'duration' => (int)($ytData['lengthSeconds'] ?? 0),
                         'thumbnail' => "https://i.ytimg.com/vi/{$videoId}/hqdefault.jpg",
-                        'video_url' => $videoStream,
-                        'audio_url' => null
-                    ]);
-                    exit;
-                }
-            } elseif (!empty($ytData['videoStreams'])) { // Piped Response
-                $videoStream = null;
-                foreach ($ytData['videoStreams'] as $s) {
-                    if (!empty($s['url']) && !empty($s['videoOnly']) === false) {
-                        $videoStream = $s['url'];
-                        break;
-                    }
-                }
-
-                if ($videoStream) {
-                    echo json_encode([
-                        'success' => true,
-                        'platform' => 'YouTube',
-                        'title' => $ytData['title'] ?? 'YouTube Video',
-                        'duration' => (int)($ytData['duration'] ?? 0),
-                        'thumbnail' => "https://i.ytimg.com/vi/{$videoId}/hqdefault.jpg",
-                        'video_url' => $videoStream,
+                        'video_url' => $stream,
                         'audio_url' => null
                     ]);
                     exit;
@@ -161,19 +164,15 @@ if (strpos($url, 'youtu.be') !== false || strpos($url, 'youtube.com') !== false)
     }
 }
 
-// ৪. সার্বজনীন ডাউনলোডার ইঞ্জিন (Facebook, Twitter ও অন্যান্য প্ল্যাটফর্ম)
-$cobaltInstances = [
-    'https://api.cobalt.tools/api/json',
+// ৪. সার্বজনীন ফলব্যাক ইঞ্জিন
+$fallbackNodes = [
+    'https://cobalt.kwiatekm.tokyo/api/json',
     'https://co.wuk.sh/api/json'
 ];
 
-foreach ($cobaltInstances as $cUrl) {
-    $payload = json_encode([
-        'url' => $url,
-        'vQuality' => '720'
-    ]);
-    
-    $res = json_decode(fetchCurl($cUrl, $payload, [
+foreach ($fallbackNodes as $node) {
+    $payload = json_encode(['url' => $url]);
+    $res = json_decode(fetchCurl($node, $payload, [
         'Content-Type: application/json',
         'Accept: application/json'
     ]), true);
