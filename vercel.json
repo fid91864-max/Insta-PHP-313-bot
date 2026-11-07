@@ -6,8 +6,8 @@
   },
   "routes": [
     {
-      "src": "/api/bot",
-      "dest": "/api/bot.php"
+      "src": "/api/download",
+      "dest": "/api/download.php"
     }
   ]
 }
